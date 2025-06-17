@@ -1,0 +1,15 @@
+<database>
+    <table name="testing">
+        <sql>
+            CREATE TABLE IF NOT EXISTS testing (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                test VARCHAR(50),
+            );
+        </sql>
+        <inserts>
+            <insert>
+                INSERT INTO testing values('test');
+            </insert>
+        </inserts>
+    </table>
+</database>
