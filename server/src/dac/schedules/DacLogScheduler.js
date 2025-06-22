@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import DacLogger from '../util/DacLogger.js';
-import Properties from '../conf/Properties.js';
+import Level from '../conf/Level.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +14,7 @@ class DacLogScheduler {
     static rotateLog() {
         try {
             if (!fs.existsSync(LOG_FILE)) {
-                DacLogger.log(Properties.WARNING, 'Log file does not exist.', Properties.SCHEDULE);
+                DacLogger.log(Level.WARNING, 'Log file does not exist.', User.SCHEDULE);
                 return;
             }
             const lines = fs.readFileSync(LOG_FILE, 'utf-8').split('\n');
@@ -29,16 +29,16 @@ class DacLogScheduler {
                 const archivePath = path.join(LOG_DIR, newFileName);
                 fs.writeFileSync(archivePath, lines.join('\n'));
                 fs.writeFileSync(LOG_FILE, '');
-                DacLogger.log(Properties.INFO, `Log rotated. Created archive: ${newFileName}`, Properties.SCHEDULE);
+                DacLogger.log(Level.INFO, `Log rotated. Created archive: ${newFileName}`, User.SCHEDULE);
             } else {
-                DacLogger.log(Properties.FINE, 'Log file size is within limits. No rotation needed.', Properties.SCHEDULE);
+                DacLogger.log(Level.FINE, 'Log file size is within limits. No rotation needed.', User.SCHEDULE);
             }
         } catch (error) {
-            DacLogger.log(Properties.ERROR, `Error in log rotation: ${error.stack}`, Properties.SCHEDULE);
+            DacLogger.log(Level.ERROR, `Error in log rotation: ${error.stack}`, User.SCHEDULE);
         }
     }
     static start() {
-        DacLogger.log(Properties.INFO, 'Running DacLogScheduler', Properties.SCHEDULE);
+        DacLogger.log(Level.INFO, 'Running DacLogScheduler', User.SCHEDULE);
         DacLogScheduler.rotateLog();
         setInterval(() => {
             DacLogScheduler.rotateLog();

@@ -1,6 +1,6 @@
 import mysql2 from 'mysql2';
-import DacLogger from './DacLogger';
-import Properties from '../conf/Properties.js';
+import DacLogger from '../util/DacLogger.js';
+import Level from '../conf/Level.js';
 
 const MACHINE_IP = 'localhost';
 const MACHINE_PASS = 'abcd1234';
@@ -20,14 +20,14 @@ class DBConnector {
             });
             connection.connect((err) => {
                 if (err) {
-                    DacLogger.log(Properties.ERROR,"[DBConnector] Connection failed: " + err);
+                    DacLogger.log(Level.ERROR,"[DBConnector] Connection failed: " + err);
                     throw err;
                 }
-                DacLogger.log(Properties.INFO,`[DBConnector] Connected to database '${DB_NAME}'`);
+                DacLogger.log(Level.INFO,`[DBConnector] Connected to database '${DB_NAME}'`);
             });
             return connection;
         } catch (error) {
-            DacLogger.log(Properties.ERROR,"[DBConnector] Unexpected error: " + error);
+            DacLogger.log(Level.ERROR,"[DBConnector] Unexpected error: " + error);
             throw error;
         }
     }

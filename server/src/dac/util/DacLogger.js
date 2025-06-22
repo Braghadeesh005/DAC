@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Properties from '../conf/Properties.js';
+import Level from '../conf/Level.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,17 +17,17 @@ class DacLogger {
             if (!fs.existsSync(LOG_FILE)) {
                 fs.writeFileSync(LOG_FILE, '');
             }
-        DacLogger.log(Properties.FINE,'Dac Log Enabled Successfully')    
+        DacLogger.log(Level.FINE,'Dac Log Enabled Successfully')    
         } catch (err) {
             console.error('[LOGGER_INIT_ERROR]', err.stack || err);
         }
     }
-    static log(status, message, user = Properties.DAC) {
+    static log(status, message, user = User.DAC) {
         const allowedStatuses = ['FINE','INFO', 'DEBUG', 'WARNING', 'ERROR'];
         if (!allowedStatuses.includes(status)) {
             const errorMsg = `[LOGGER_VALIDATION_ERROR] Invalid log status: ${status}. Allowed: ${allowedStatuses.join(', ')}`;
             console.error(errorMsg);
-            DacLogger.log(Properties.ERROR,errorMsg,user);
+            DacLogger.log(Level.ERROR,errorMsg,user);
             return;
         }
         try {
