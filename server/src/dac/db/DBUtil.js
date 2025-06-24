@@ -1,13 +1,13 @@
 import DBConnector from './DBConnector.js';
 import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js'
+import DacUtil from '../util/DacUtil.js';
 
 class DBUtil {
 
     static async _runQuery(sqlQuery, resultHandler, operation) {
         let connection;
         try {
-            DacLogger.log(Level.INFO, `Executing ${operation} for query: ${sqlQuery}`);
             connection = DBConnector.connect();
             return await new Promise((resolve, reject) => {
                 connection.query(sqlQuery, (err, result) => {
@@ -15,9 +15,9 @@ class DBUtil {
                         DacLogger.log(Level.ERROR, `Error in ${operation}: ${err.stack}`);
                         reject(err);
                     } else {
-                        const result = resultHandler(result);
+                        const finalResult = resultHandler(result);
                         DacLogger.log(Level.FINE, `${operation} executed successfully.`);
-                        resolve(result);
+                        resolve(finalResult);
                     }
                 });
             });

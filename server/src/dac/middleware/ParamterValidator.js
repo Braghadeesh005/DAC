@@ -3,8 +3,8 @@ import Level from '../conf/Level.js';
 
 class ParameterValidator {
 
-    static RE_LOGIN = /^\/api^\/login$/;
-    static RE_CHECK_SESSION_VALIDITY = /^\/api^\/session$/;
+    static RE_LOGIN = /^\/api\/auth\/login$/;
+    static RE_CHECK_SESSION_VALIDITY = /^\/api\/auth\/session$/;
 
     static validate() {
         return (req, res, next) => {
@@ -29,6 +29,7 @@ class ParameterValidator {
                     DacLogger.log(Level.WARN, `No validation rule defined for path: ${path}`);
                     return res.status(401).json({ error: `No validation rule defined for path: ${path}` });
                 }
+                DacLogger.log(Level.FINE,"Paramter Validation Completed");
                 next();
             } 
             catch (err) {

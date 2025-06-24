@@ -19,35 +19,41 @@ class AuraCrypt {
         return stream.slice(0, length);
     }
 
-    /* 
-      ** Generate random 8-char IV (Initialization Vector)
-      ** Do 3 rounds of XOR with different keyStream offsets to add complexity
-      ** Prepend IV to encrypted data before encoding
-    */
+    static _toUrlSafe(base64) {
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    static _fromUrlSafe(str) {
+        let s = str.replace(/-/g, '+').replace(/_/g, '/');
+        return s + '='.repeat((4 - s.length % 4) % 4);
+    }
+
     static encrypt(plainText, key) {
         const iv = Array.from({length:8}, () => String.fromCharCode(Math.floor(Math.random() * 256))).join('');
-        const keyStream = this._generateKeyStream(key, iv, plainText.length);        
         let buffer = plainText;
+        const keyStream = this._generateKeyStream(key, iv, buffer.length);
         for (let round = 0; round < 3; round++) {
             let temp = '';
             for (let i = 0; i < buffer.length; i++) {
-                temp += String.fromCharCode(buffer.charCodeAt(i) ^ keyStream.charCodeAt((i + round*3) % keyStream.length));
+            temp += String.fromCharCode(buffer.charCodeAt(i) ^ keyStream.charCodeAt((i + round*3) % keyStream.length));
             }
             buffer = temp;
         }
         const combined = iv + buffer;
-        return Buffer.from(combined, 'binary').toString('base64');
+        const base64 = Buffer.from(combined, 'binary').toString('base64');
+        return this._toUrlSafe(base64);
     }
 
     static decrypt(encryptedString, key) {
-        const combined = Buffer.from(encryptedString, 'base64').toString('binary');
+        const b64 = this._fromUrlSafe(encryptedString);
+        const combined = Buffer.from(b64, 'base64').toString('binary');
         const iv = combined.slice(0, 8);
         let buffer = combined.slice(8);
         const keyStream = this._generateKeyStream(key, iv, buffer.length);
         for (let round = 2; round >= 0; round--) {
             let temp = '';
             for (let i = 0; i < buffer.length; i++) {
-                temp += String.fromCharCode(buffer.charCodeAt(i) ^ keyStream.charCodeAt((i + round*3) % keyStream.length));
+            temp += String.fromCharCode(buffer.charCodeAt(i) ^ keyStream.charCodeAt((i + round*3) % keyStream.length));
             }
             buffer = temp;
         }

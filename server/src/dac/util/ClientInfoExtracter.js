@@ -1,5 +1,5 @@
-import Level from "../conf/Level";
-import DacLogger from "./DacLogger";
+import Level from "../conf/Level.js";
+import DacLogger from "./DacLogger.js";
 
 class ClientInfoExtractor {
 

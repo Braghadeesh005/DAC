@@ -24,6 +24,7 @@ const PORT = 4000;
 DacStartup.initialize();
 
 //Parser
+app.use(express.json());
 app.use(cookieParser());
 
 //Middlewares

@@ -35,4 +35,20 @@ class DacUtil{
         return `'${String(param).replace(/'/g, "''")}'`;
     }
 
+    static getISTTimestamp() {
+        const istFormatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+        });
+        const parts = istFormatter.formatToParts(new Date());
+        const get = type => parts.find(p => p.type === type)?.value || '00';
+        const year = get('year');
+        const month = get('month');
+        const day = get('day');
+        const hour = get('hour');
+        const minute = get('minute');
+        const second = get('second');
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    }
 }
+
+export default DacUtil;

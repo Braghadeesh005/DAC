@@ -1,5 +1,7 @@
 class StreamObfuscator {
     static _salt = 'S7x!';
+    static _alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
     static _transformChar(char, index, length) {
         const saltChar = this._salt.charCodeAt(index % this._salt.length);
         const shift = (index * 7 + length + saltChar) % 94;
@@ -16,26 +18,59 @@ class StreamObfuscator {
         return String.fromCharCode(origCode);
     }
 
+    static _toBytes(str) {
+        return Uint8Array.from(str.split('').map(c => c.charCodeAt(0)));
+    }
+
+    static _fromBytes(bytes) {
+        return String.fromCharCode(...bytes);
+    }
+
+    static _base62Encode(bytes) {
+        const ALPH = this._alphabet;
+        let num = BigInt('0x' + Buffer.from(bytes).toString('hex'));
+        if (num === 0n) return ALPH[0];
+        let encoded = '';
+        while (num > 0n) {
+        const rem = num % 62n;
+        encoded = ALPH[Number(rem)] + encoded;
+        num /= 62n;
+        }
+        return encoded;
+    }
+
+    static _base62Decode(str) {
+        const ALPH = this._alphabet;
+        let num = 0n;
+        for (const ch of str) {
+        num = num * 62n + BigInt(ALPH.indexOf(ch));
+        }
+        let hex = num.toString(16);
+        if (hex.length % 2) hex = '0' + hex;
+        return Uint8Array.from(Buffer.from(hex, 'hex'));
+    }
+
     static encrypt(text) {
         const length = text.length;
         let transformed = '';
         for (let i = 0; i < length; i++) {
-            transformed += this._transformChar(text[i], i, length);
+        transformed += this._transformChar(text[i], i, length);
         }
         const mid = Math.floor(length / 2);
         const shuffled = transformed.slice(mid) + transformed.slice(0, mid);
-        return shuffled.split('').reverse().join('');
+        const bytes = this._toBytes(shuffled);
+        return this._base62Encode(bytes);
     }
 
-    static decrypt(obfuscated) {
-        if(obfuscated == null) return null;
-        const reversed = obfuscated.split('').reverse().join('');
-        const length = reversed.length;
-        const mid = Math.floor(length / 2);
-        const unshuffled = reversed.slice(-mid) + reversed.slice(0, -mid);
+    static decrypt(obf) {
+        if (obf == null) return null;
+        const decodedBytes = this._base62Decode(obf);
+        const shuffled = this._fromBytes(decodedBytes);
+        const length = shuffled.length, mid = Math.floor(length / 2);
+        const unshuffled = shuffled.slice(-mid) + shuffled.slice(0, -mid);
         let original = '';
         for (let i = 0; i < length; i++) {
-            original += this._restoreChar(unshuffled[i], i, length);
+        original += this._restoreChar(unshuffled[i], i, length);
         }
         return original;
     }

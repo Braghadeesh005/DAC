@@ -2,13 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import DacLogger from '../util/DacLogger.js';
+import User from '../conf/User.js'
 import Level from '../conf/Level.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const LOG_DIR = path.resolve(__dirname, '../../../../logs/serverlog');
 const LOG_FILE = path.join(LOG_DIR, 'dac.log');
-const MAX_LINES = 100; // Set to 1000 in production
+const MAX_LINES = 1000; // Set to 5000 in production
 
 class DacLogScheduler {
     static rotateLog() {

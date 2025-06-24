@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Level from '../conf/Level.js';
+import User from '../conf/User.js'
+import DacUtil from './DacUtil.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +33,7 @@ class DacLogger {
             return;
         }
         try {
-            const timestamp = new Date().toISOString().replace('T', ' ').split('.')[0];
+            const timestamp = DacUtil.getISTTimestamp();
             const logEntry = `[${timestamp}] [${user}] [${status}] ${message}\n`;
             fs.appendFileSync(LOG_FILE, logEntry);
         } catch (err) {

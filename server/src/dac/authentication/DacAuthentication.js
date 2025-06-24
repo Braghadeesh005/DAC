@@ -25,14 +25,9 @@ class DacAuthentication {
 
     static async isSessionCountReached(userId) {
         try {
-            const sessionCountRow = await DBUtil.getResults(DacQueries.QUERY_GET_PROPS_DAC_CONFIGURATION, [DacConfiguration.PROP_SESSION_LIMIT]);
-            if (!sessionCountRow) {
-                DacLogger.log(Level.ERROR,`Missing configuration: ${DacConfiguration.PROP_SESSION_LIMIT}`);
-                throw new Error(`Missing configuration: ${DacConfiguration.PROP_SESSION_LIMIT}`);
-            }
-            const sessionLimit = parseInt(sessionCountRow[0].PROPVAL);
             const sessionCount = await DBUtil.getCount(DacQueries.QUERY_COUNT_SESSIONS, [userId]);
-            return sessionCount < sessionLimit;
+            const sessionLimit = await DacConfiguration.get(DacConfiguration.PROP_SESSION_LIMIT); 
+            return sessionCount < parseInt(sessionLimit);
         } 
         catch (err) {
             throw new Error(`isSessionCountReached() failed: ${err.message}`);
@@ -41,12 +36,8 @@ class DacAuthentication {
 
     static async validateLoginCredentials(inputPassword, encryptedPasswordFromDB) {
         try {
-            const keyRow = await DBUtil.getResults(DacQueries.QUERY_GET_PROPS_DAC_CONFIGURATION, [this.PROP_AUTH_KEY]);
-            if (!keyRow) {
-                DacLogger.log(Level.ERROR,`Missing configuration: ${this.PROP_AUTH_KEY}`);
-                throw new Error(`Missing configuration: ${this.PROP_AUTH_KEY}`);
-            }
-            return AuraCrypt.decrypt(encryptedPasswordFromDB, keyRow[0].PROPVAL) === inputPassword;
+            const userPassKey = await DacConfiguration.get(DacConfiguration.PROP_USER_PASSWORD_KEY);
+            return AuraCrypt.decrypt(encryptedPasswordFromDB, StreamObfuscator.decrypt(userPassKey)) === inputPassword;
         } 
         catch (err) {
             throw new Error(`validateLoginCredentials() failed: ${err.message}`);
@@ -56,17 +47,7 @@ class DacAuthentication {
     static async createSession(userId, ip, os, browser, deviceType, res) {
         try {
             const digest = DigestBuilder.createDigest();
-            const rows = await DBUtil.getResults(DacQueries.QUERY_GET_PROPS_DAC_CONFIGURATION, [[this.PROP_SESSION_KEY, this.PROP_AUTH_KEY]]);
-            const keyMap = {};
-            for (const { PROPNAME, PROPVAL } of rows) {
-                keyMap[PROPNAME] = PROPVAL;
-            }
-            const sessionKey = StreamObfuscator.decrypt(keyMap[this.PROP_SESSION_KEY]);
-            const authKey = StreamObfuscator.decrypt(keyMap[this.PROP_AUTH_KEY]);
-            if (!sessionKey || !authKey) {
-                DacLogger.log(Level.ERROR,'Missing Session/Authentication keys in DacConfiguration');
-                throw new Error('Missing Session/Authentication keys in DacConfiguration');
-            }
+            const authKey = StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY));
             const encryptedDigestForAuth = AuraCrypt.encrypt(digest, authKey);
             res.cookie('dac-token', encryptedDigestForAuth, {
                 httpOnly: true,
@@ -74,8 +55,7 @@ class DacAuthentication {
                 sameSite: 'Strict'
             });
             const currentTimeEpoch = Math.floor(Date.now() / 1000);
-            const encryptedDigestForSession = AuraCrypt.encrypt(digest, sessionKey);
-            await DBUtil.executeUpdate(DacQueries.QUERY_INSERT_SESSION, [userId, encryptedDigestForSession, currentTimeEpoch, currentTimeEpoch, ip, os, browser, deviceType]);
+            await DBUtil.executeUpdate(DacQueries.QUERY_INSERT_SESSION, [userId, digest, currentTimeEpoch, currentTimeEpoch, ip, os, browser, deviceType]);
             DacLogger.log(Level.INFO, `Session created for user ID ${userId}`);
         } 
         catch (err) {
@@ -90,12 +70,7 @@ class DacAuthentication {
                 DacLogger.log(Level.WARN, 'Missing dac-token in cookies');
                 return false;
             }
-            const keyRow = await DBUtil.getResults(DacQueries.QUERY_GET_PROPS_DAC_CONFIGURATION, [DacConfiguration.PROP_AUTH_KEY]);
-            if (DacUtil.isEmptyList(keyRow)) {
-                DacLogger.log(Level.ERROR, `Missing configuration: ${this.PROP_AUTH_KEY}`);
-                throw new Error(`Missing configuration: ${this.PROP_AUTH_KEY}`);
-            }
-            const digest = AuraCrypt.decrypt(token, keyRow[0].PROPVAL);
+            const digest = AuraCrypt.decrypt(token, StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY)));
             return await DBUtil.hasResults(DacQueries.QUERY_CHECK_DIGEST, [digest]);
         } 
         catch (err) {

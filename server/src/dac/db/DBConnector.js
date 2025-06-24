@@ -23,7 +23,7 @@ class DBConnector {
                     DacLogger.log(Level.ERROR,"[DBConnector] Connection failed: " + err);
                     throw err;
                 }
-                DacLogger.log(Level.INFO,`[DBConnector] Connected to database '${DB_NAME}'`);
+                DacLogger.log(Level.INFO,`[DBConnector] Connection Object Created.`);
             });
             return connection;
         } catch (error) {

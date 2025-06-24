@@ -3,6 +3,7 @@ import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js';
 import User from '../conf/User.js';
 import DacQueries from '../conf/DacQueries.js';
+import DacUtil from '../util/DacUtil.js'
 
 class SessionCleanupScheduler {
 
