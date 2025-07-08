@@ -28,7 +28,7 @@ router.post('/login', async (req, res) => {
     const { ip, os, browser, deviceType} = ClientInfoExtractor.extract(req);
     DacLogger.log(Level.FINE, 'User Login Successful and created new Session');
     await DacAuthentication.createSession(userData.userId, ip, os, browser, deviceType, res);
-    return res.status(200).json({ message: `Login Successful`});
+    return res.status(200).json({ message: `Login Successful`,  userId: userData.userId});
   }
   catch(err){
     DacLogger.log(Level.ERROR, `Login failed due to error: ${err.stack()}`,User.CLIENT);

@@ -1,0 +1,16 @@
+.loader {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--font-primary);
+  color: var(--font-primary);
+  box-shadow: 20px 0, -20px 0;
+  animation: dots 0.5s infinite alternate;
+  margin: 50px auto;
+}
+
+@keyframes dots {
+  0%   { box-shadow: 20px 0 var(--font-primary), -20px 0 var(--font-primary); }
+  50%  { box-shadow: 10px 0 var(--font-primary), -10px 0 var(--font-primary); }
+  100% { box-shadow: 0 0 var(--font-primary), 0 0 var(--font-primary); }
+}

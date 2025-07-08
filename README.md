@@ -1,6 +1,15 @@
 # DAC
 Deployment Made Easy. One step tool to deploy your app in our premises.
 
+Upcoming Commit Works : Login API testing via UI. Initial Deployment Configurations, Admin - Deployment Configuration Page #5
+
+Commits:
+
+#4 : Added Frontend UI Components (Layouts, Components, Pages), Login Page UI, API Services, Authentication Services.
+#3 : Bug Fixes and Module Testing - Authentication Module Manual Backend Testing Done.
+#2 : Authentication Module - Encryption Algorithms, Middlewares, SessionInvalidatorSchedule, Authentication APIs 
+#1 : Base Setup - run.sh, build.sh, server, client, logs
+
 DAC BASE SETUP :
 
 DIRECTORY-STRUCTURE :
@@ -48,7 +57,7 @@ DAC/
 │   └── package.json
 └── .gitignore
 
-Work :
+Scripts-Functions :
 
 1. run.sh script :
 	→ Will write all the logs in this script in startup.log
@@ -62,21 +71,16 @@ Work :
 		→ Then call server startup
 	→ If warm start, then it calls server startup
 		→ call npm start and dac-index.js will be invoked.
-		
-2. dac-index.js :
+			
+2. build.sh script :
+	→ Check if already a build exists, if exists take a copy of build and archive it with tar and move to /backup.
+	→ Then run npm run build.
+	→ Rename dist to build.
+	
+3. dac-index.js :
 	→ Initialize DAC Logs by calling logs class. 
 	→ DB Connection class - Should have a function which return connection object. 
 	→ Create DB Class - Should have methods to perform all DB operations which calls DB Connection class to get connection object. 
 	→ Initialize Startup class (This will contain the Schedules which starts during server startup) 
 	→ Render client in '/' - Merge react frontend in this same port 
-	→ Connect with router pages for each module. The api should start with /api 
-	
-3. APIs : AutheticationAPi, FirewallApi, InventoryApi, LBApi 
-
-4. Client-side code - Basic Setup
-
-5. build.sh script :
-	→ Check if already a build exists, if exists take a copy of build and archive it with tar and move to /backup.
-	→ Then run npm run build.
-	→ Rename dist to build.
-	
+	→ Connect with router pages for each module. The api should start with /api

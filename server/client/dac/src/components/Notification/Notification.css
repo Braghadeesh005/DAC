@@ -1,0 +1,36 @@
+* {
+  font-family: Helvetica;
+  margin: 0;
+  padding: 0;
+}
+.notify {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  z-index: 1000;
+  pointer-events: none;
+}
+.notify span {
+  display: block;
+  border-radius: 6px;
+  padding: 10px 30px;
+  font-weight: bold;
+}
+.notify.active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(7px);
+}
+.success {
+  color: #03a679;
+  background: rgba(0, 255, 76, 0.15);
+}
+.failure {
+  color: #ff3939;
+  background: rgba(255, 0, 0, 0.15);
+}

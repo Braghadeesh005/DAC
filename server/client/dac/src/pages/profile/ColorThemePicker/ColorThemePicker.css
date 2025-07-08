@@ -1,0 +1,54 @@
+.color-theme-picker {
+  margin: 20px;
+  background-color: var(--bg-dark-grey);
+  border-radius: var(--border-radius);
+  color: var(--font-grey);
+  font-weight: 100px;
+  padding: 10px;
+}
+
+.color-theme-picker-outer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.color-theme-picker-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-theme-picker h4{
+    font-size: var(--font-size-big);
+    font-weight: 100;
+}
+
+.color-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.color-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.2s ease;
+}
+
+.color-primary{
+    background-color: var(--font-primary);
+    width: 30px;
+    height: 30px;   
+}
+
+.color-btn:hover {
+  transform: scale(1.2);
+}

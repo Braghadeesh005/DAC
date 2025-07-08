@@ -1,0 +1,25 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--font-white);
+  font-family: "Lato", sans-serif;
+  font-weight: 500;
+  font-style: normal;
+}
+:root{
+  --bg-color:rgb(19, 19, 19);
+  --font-grey:rgb(165, 165, 165);
+  --font-white:rgb(255, 255, 255);
+  --bg-dark-grey:rgb(27, 27, 27);
+  --bg-light-grey:#272727;
+  --border-radius: 5px;
+  --nav-box-shadow:rgba(218, 218, 218, 0.2) 0px 1px 2px 0px;
+  --sbar-button-bg-color:rgb(42, 42, 43);
+  --font-size-big: 1.2rem;
+  --font-size-medium: 1rem;
+  --font-size-small: 0.8rem;
+  --button-font-size-small: 0.7rem;
+  --theme-color-default: rgb(255, 255, 255);
+  --font-primary: var(--theme-color-default);
+}

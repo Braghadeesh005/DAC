@@ -1,0 +1,12 @@
+.custom-button {
+  padding: 6px 16px;
+  font-size: var(--font-size-small);
+  border-radius: 2px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.custom-button:hover {
+  opacity: 0.8;
+}

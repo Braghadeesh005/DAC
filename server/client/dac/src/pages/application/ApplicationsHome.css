@@ -1,0 +1,10 @@
+.app-container{
+    background-color: var(--bg-dark-grey);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    justify-content: left;
+    gap: 20px;
+    padding: 20px;
+}
