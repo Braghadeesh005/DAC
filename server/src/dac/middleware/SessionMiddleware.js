@@ -5,7 +5,6 @@ import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js';
 import DacConfiguration from '../conf/DacConfiguration.js';
 import DacQueries from '../conf/DacQueries.js';
-import DacUtil from '../util/DacUtil.js';
 import ParameterValidator from './ParamterValidator.js';
 
 class SessionMiddleware {

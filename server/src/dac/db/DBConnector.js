@@ -2,21 +2,16 @@ import mysql2 from 'mysql2';
 import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js';
 
-const MACHINE_IP = 'localhost';
-const MACHINE_PASS = 'abcd1234';
-const DB_USER = 'root';
-const DB_PORT = 3306;
-const DB_NAME = 'dacdb';
-
+require("dotenv").config();
 class DBConnector {
     static connect() {
         try {
             const connection = mysql2.createConnection({
-                host: MACHINE_IP,
-                user: DB_USER,
-                password: MACHINE_PASS,
-                port: DB_PORT,
-                database: DB_NAME
+                host: process.env.MACHINE_IP,
+                user: process.env.DB_USER,
+                password: process.env.MACHINE_PASS,
+                port: process.env.DB_PORT,
+                database: process.env.DB_NAME
             });
             connection.connect((err) => {
                 if (err) {
