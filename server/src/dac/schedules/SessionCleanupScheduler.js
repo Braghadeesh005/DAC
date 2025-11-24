@@ -4,6 +4,7 @@ import Level from '../conf/Level.js';
 import User from '../conf/User.js';
 import DacQueries from '../conf/DacQueries.js';
 import DacUtil from '../util/DacUtil.js'
+const LOGGER = new DacLogger("SessionCleanupScheduler.js");
 
 class SessionCleanupScheduler {
 
@@ -15,13 +16,13 @@ class SessionCleanupScheduler {
                 .filter(row => (currentEpoch - row.LAST_ACCESSED_TIME) > 600)
                 .map(row => row.SESSION_ID);
             if (DacUtil.isEmptyList(expiredSessionIdList)) {
-                DacLogger.log(Level.INFO, 'No expired sessions found.',User.SCHEDULE);
+                LOGGER.log(Level.INFO, 'No expired sessions found.',User.SCHEDULE);
                 return;
             }
             await DBUtil.executeUpdate(DacQueries.QUERY_DELETE_EXPIRED_SESSIONS, [expiredSessionIdList]);
-            DacLogger.log(Level.INFO, `Deleted ${expiredSessionIdList.length} expired sessions.`,User.SCHEDULE);
+            LOGGER.log(Level.INFO, `Deleted ${expiredSessionIdList.length} expired sessions.`,User.SCHEDULE);
         } catch (err) {
-            DacLogger.log(Level.ERROR, `Session cleanup failed: ${err.stack}`,User.SCHEDULE);
+            LOGGER.log(Level.ERROR, `Session cleanup failed: ${err.message}`,User.SCHEDULE, err);
         }
     }
 

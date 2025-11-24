@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 // Utils
 import DacStartup from './src/dac/startup/DacStartup.js';
 import DacLogger from './src/dac/util/DacLogger.js';
+import Level from './src/dac/conf/Level.js';
+const LOGGER = new DacLogger("dac-index.js");
 
 // Import APIs 
 import AuthenticationApi from './router/AuthenticationApi.js'
@@ -15,7 +17,7 @@ import LBApi from './router/LBApi.js'
 
 // Middlewares
 import SessionMiddleware from './src/dac/middleware/SessionMiddleware.js';
-import ParameterValidator from './src/dac/middleware/ParamterValidator.js';
+import ParameterValidator from './src/dac/middleware/ParameterValidator.js';
 
 const app = express();
 const PORT = 4000;
@@ -48,5 +50,5 @@ app.get('/', (req, res) => {
 
 // Express server
 app.listen(PORT, () => {
-    DacLogger.log('FINE',`Server is listening on port ${PORT}`);
+    LOGGER.log(Level.FINE,`Server is listening on port ${PORT}`);
 });

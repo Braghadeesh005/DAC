@@ -6,6 +6,7 @@ import Level from '../conf/Level.js';
 import StreamObfuscator from '../security/StreamObfuscator.js';
 import DacConfiguration from '../conf/DacConfiguration.js';
 import DacQueries from '../conf/DacQueries.js';
+const LOGGER = new DacLogger("DacAuthentication.js");
 
 class DacAuthentication {
 
@@ -13,7 +14,7 @@ class DacAuthentication {
         try {
             const rows = await DBUtil.getResults(DacQueries.QUERY_GET_USER, [username]);
             if (!rows || rows.length === 0) {
-                DacLogger.log(Level.WARNING, `User not found: ${username}`);
+                LOGGER.log(Level.WARNING, `User not found: ${username}`);
                 throw new Error('User not found');
             }
             const { USER_ID: userId, PASSWORD: password } = rows[0];
@@ -56,7 +57,7 @@ class DacAuthentication {
             });
             const currentTimeEpoch = Math.floor(Date.now() / 1000);
             await DBUtil.executeUpdate(DacQueries.QUERY_INSERT_SESSION, [userId, digest, currentTimeEpoch, currentTimeEpoch, ip, os, browser, deviceType]);
-            DacLogger.log(Level.INFO, `Session created for user ID ${userId}`);
+            LOGGER.log(Level.INFO, `Session created for user ID ${userId}`);
         } 
         catch (err) {
             throw new Error(`createSession() failed: ${err.message}`);
@@ -67,7 +68,7 @@ class DacAuthentication {
         try {
             const token = req.cookies?.['dac-token'];
             if (!token) {
-                DacLogger.log(Level.WARN, 'Missing dac-token in cookies');
+                LOGGER.log(Level.WARNING, 'Missing dac-token in cookies');
                 return false;
             }
             const digest = AuraCrypt.decrypt(token, StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY)));

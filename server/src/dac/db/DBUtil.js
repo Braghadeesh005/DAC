@@ -2,6 +2,8 @@ import DBConnector from './DBConnector.js';
 import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js'
 import DacUtil from '../util/DacUtil.js';
+import User from '../conf/User.js';
+const LOGGER = new DacLogger("DBUtil.js");
 
 class DBUtil {
 
@@ -12,17 +14,17 @@ class DBUtil {
             return await new Promise((resolve, reject) => {
                 connection.query(sqlQuery, (err, result) => {
                     if (err) {
-                        DacLogger.log(Level.ERROR, `Error in ${operation}: ${err.stack}`);
+                        LOGGER.log(Level.ERROR, `Error in ${operation} : ${err.message}`, User.DAC, err);
                         reject(err);
                     } else {
                         const finalResult = resultHandler(result);
-                        DacLogger.log(Level.FINE, `${operation} executed successfully.`);
+                        LOGGER.log(Level.FINE, `${operation} executed successfully.`);
                         resolve(finalResult);
                     }
                 });
             });
         } catch (error) {
-            DacLogger.log(Level.ERROR, `Exception in ${operation}: ${error.stack}`);
+            LOGGER.log(Level.ERROR, `Exception in ${operation} : ${err.message}`, User.DAC, err);
             throw error;
         } finally {
             if (connection) connection.end();
@@ -31,7 +33,7 @@ class DBUtil {
 
     static async getResults(sqlQuery, params = []) {
         return await DBUtil._runQuery(DBUtil._formatQuery(sqlQuery, params), result => {
-            DacLogger.log(Level.INFO, `getResults returned ${result.length} rows.`);
+            LOGGER.log(Level.INFO, `getResults returned ${result.length} rows.`);
             return result;
         }, 'getResults');
     }
@@ -39,21 +41,21 @@ class DBUtil {
     static async hasResults(sqlQuery, params = []) {
         return await DBUtil._runQuery(DBUtil._formatQuery(sqlQuery, params), result => {
             const has = result.length > 0;
-            DacLogger.log(Level.INFO, `hasResults returned ${has}`);
+            LOGGER.log(Level.INFO, `hasResults returned ${has}`);
             return has;
         }, 'hasResults');
     }
 
     static async executeUpdate(sqlQuery, params = []) {
         return await DBUtil._runQuery(DBUtil._formatQuery(sqlQuery, params), result => {
-            DacLogger.log(Level.INFO, `executeUpdate affected ${result.affectedRows} rows.`);
+            LOGGER.log(Level.INFO, `executeUpdate affected ${result.affectedRows} rows.`);
             return result.affectedRows;
         }, 'executeUpdate');
     }
 
     static async getCount(sqlQuery, params = []) {
         return await DBUtil._runQuery(DBUtil._formatQuery(sqlQuery, params), result => {
-            DacLogger.log(Level.INFO, `getCount returned ${result[0] ? Object.values(result[0])[0] : 0} rows.`);
+            LOGGER.log(Level.INFO, `getCount returned ${result[0] ? Object.values(result[0])[0] : 0} rows.`);
             return result[0] ? Object.values(result[0])[0] : 0;
         }, 'getCount');
     }

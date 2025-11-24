@@ -1,5 +1,6 @@
 import Level from "../conf/Level.js";
 import DacLogger from "./DacLogger.js";
+const LOGGER = new DacLogger("ClientInfoExtractor.js");
 
 class ClientInfoExtractor {
 
@@ -27,7 +28,7 @@ class ClientInfoExtractor {
         const os = this.matchPattern(this.OS_PATTERNS, userAgent, 'Unknown OS');
         const browser = this.matchPattern(this.BROWSER_PATTERNS, userAgent, 'Unknown Browser', userAgent);
         const deviceType = this.matchPattern(this.DEVICE_PATTERNS, userAgent, 'Desktop');
-        DacLogger.log(Level.INFO, `Fetched IP : ${ip}, OS : ${os}, BROWSER : ${browser}, DEVICE TYPE : ${deviceType}.`)
+        LOGGER.log(Level.INFO, `Fetched IP : ${ip}, OS : ${os}, BROWSER : ${browser}, DEVICE TYPE : ${deviceType}.`)
         return { ip, os, browser, deviceType };
     }
 

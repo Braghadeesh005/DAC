@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import DacLogger from '../util/DacLogger.js';
 import User from '../conf/User.js'
 import Level from '../conf/Level.js';
+const LOGGER = new DacLogger("DacLogScheduler.js");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,7 +16,7 @@ class DacLogScheduler {
     static rotateLog() {
         try {
             if (!fs.existsSync(LOG_FILE)) {
-                DacLogger.log(Level.WARNING, 'Log file does not exist.', User.SCHEDULE);
+                LOGGER.log(Level.WARNING, 'Log file does not exist.', User.SCHEDULE);
                 return;
             }
             const lines = fs.readFileSync(LOG_FILE, 'utf-8').split('\n');
@@ -30,16 +31,16 @@ class DacLogScheduler {
                 const archivePath = path.join(LOG_DIR, newFileName);
                 fs.writeFileSync(archivePath, lines.join('\n'));
                 fs.writeFileSync(LOG_FILE, '');
-                DacLogger.log(Level.INFO, `Log rotated. Created archive: ${newFileName}`, User.SCHEDULE);
+                LOGGER.log(Level.INFO, `Log rotated. Created archive: ${newFileName}`, User.SCHEDULE);
             } else {
-                DacLogger.log(Level.FINE, 'Log file size is within limits. No rotation needed.', User.SCHEDULE);
+                LOGGER.log(Level.FINE, 'Log file size is within limits. No rotation needed.', User.SCHEDULE);
             }
-        } catch (error) {
-            DacLogger.log(Level.ERROR, `Error in log rotation: ${error.stack}`, User.SCHEDULE);
+        } catch (err) {
+            LOGGER.log(Level.ERROR, `Error in log rotation: ${err.message}`, User.SCHEDULE, err);
         }
     }
     static start() {
-        DacLogger.log(Level.INFO, 'Running DacLogScheduler', User.SCHEDULE);
+        LOGGER.log(Level.INFO, 'Running DacLogScheduler', User.SCHEDULE);
         DacLogScheduler.rotateLog();
         setInterval(() => {
             DacLogScheduler.rotateLog();
