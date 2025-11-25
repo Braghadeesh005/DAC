@@ -60,13 +60,12 @@ cold_start() {
     local MYSQL_PASSWORD="$1"
     log "Performing Cold Start"
     export MYSQL_PWD="$MYSQL_PASSWORD"
-    create_db "$MYSQL_PASSWORD"
-    populate_tables "$MYSQL_PASSWORD"
+    create_db
+    populate_tables
     install_packages
 }
 
 create_db() {
-    local MYSQL_PASSWORD="$1"
     log "Checking if DB '$DB_NAME' exists"
     local EXISTS
     EXISTS=$(mysql -u"$MYSQL_USER" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME")
@@ -80,7 +79,6 @@ create_db() {
 }
 
 populate_tables() {
-    local MYSQL_PASSWORD="$1"
     TABLE_NAMES=$(xmllint --nocdata --xpath "//table/@name" "$DATA_FILE" | sed -e 's/name="/\n/g' -e 's/"//g' | grep -v '^$')
     for TABLE in $TABLE_NAMES; do
         create_table "$TABLE"
