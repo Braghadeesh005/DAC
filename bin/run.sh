@@ -8,7 +8,7 @@ SERVER_SCRIPT_FULL_PATH="$SERVER_HOME/$SERVER_SCRIPT"
 LOG_DIR="$PROJECT_HOME/logs"
 LOG_FILE="$LOG_DIR/startup.log"
 DB_NAME="dacdb"
-DB_DUMP="../data/dacdb.xml"
+DATA_FILE="$PROJECT_HOME/data/dacdb.xml"
 MYSQL_USER="root"
 
 log() {
@@ -57,57 +57,83 @@ prepare_logs() {
 }
 
 cold_start() {
-    MYSQL_PASSWORD="$1"
-    log "Starting cold start"
-    # Create DB if not exists
+    local MYSQL_PASSWORD="$1"
+    log "Performing Cold Start"
+    export MYSQL_PWD="$MYSQL_PASSWORD"
+    create_db "$MYSQL_PASSWORD"
+    populate_tables "$MYSQL_PASSWORD"
+    install_packages
+}
+
+create_db() {
+    local MYSQL_PASSWORD="$1"
     log "Checking if DB '$DB_NAME' exists"
-    EXISTS=$(mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME")
+    local EXISTS
+    EXISTS=$(mysql -u"$MYSQL_USER" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME")
     if [ -z "$EXISTS" ]; then
         log "Creating DB '$DB_NAME'"
-        mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "CREATE DATABASE $DB_NAME;" || {
+        mysql -u"$MYSQL_USER" -e "CREATE DATABASE $DB_NAME;" || {
             consoleLog "ERROR: Failed to create database."
             exit 1
         }
     fi
-    # Extract table names
-    TABLE_NAMES=$(xmllint --xpath "//table/@name" "$DB_DUMP" | sed -e 's/name="/\n/g' -e 's/"//g' | grep -v '^$')
-    # Iterate all tables 
+}
+
+populate_tables() {
+    local MYSQL_PASSWORD="$1"
+    TABLE_NAMES=$(xmllint --nocdata --xpath "//table/@name" "$DATA_FILE" | sed -e 's/name="/\n/g' -e 's/"//g' | grep -v '^$')
     for TABLE in $TABLE_NAMES; do
-        TABLE_EXISTS=$(mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -D "$DB_NAME" -e "SHOW TABLES LIKE '$TABLE';" 2>/dev/null | grep "$TABLE")
-        # Create table if missing
-        if [ -z "$TABLE_EXISTS" ]; then
-            SQL=$(xmllint --xpath "string(//table[@name='$TABLE']/sql)" "$DB_DUMP")
-            log "Creating table $TABLE"
-            mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -D "$DB_NAME" -e "$SQL"
-        else
-            log "Table $TABLE already exists. Skipping creation."
-        fi
-        # Insert data into table (ALWAYS attempt)
-        INSERT_COUNT=$(xmllint --xpath "count(//table[@name='$TABLE']/inserts/insert)" "$DB_DUMP")
-        log "Inserting data into table $TABLE (Found $INSERT_COUNT rows)"
-        for ((i=1; i<=INSERT_COUNT; i++)); do
-            SQL=$(xmllint --xpath "string((//table[@name='$TABLE']/inserts/insert)[$i])" "$DB_DUMP")
-            # Naive check to avoid duplicate insert
-            if echo "$SQL" | grep -i "insert into" >/dev/null; then
-                log "Running insert: $SQL"
-                mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -D "$DB_NAME" -e "$SQL"
-            fi
-        done
+        create_table "$TABLE"
+        insert_table "$TABLE"
     done
-    cd "$(dirname "$0")/../server" || {
-        consoleLog "ERROR: Failed to change to server directory."
-        exit 1
-    }
-    log "Running npm install"
+}
+
+create_table() {
+    local TABLE="$1"
+    if ! mysql -u"$MYSQL_USER" -D "$DB_NAME" -e "SHOW TABLES LIKE '$TABLE';" 2>/dev/null | grep -q "$TABLE"; then
+        local RAW_SQL
+        RAW_SQL=$(xmllint --nocdata --xpath "//table[@name='$TABLE']/sql" "$DATA_FILE" 2>/dev/null)
+        local SQL=$(echo "$RAW_SQL" | sed -n 's|<sql>\(.*\)</sql>|\1|p' | tr -d '\n\r' | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
+        log "Creating table: $TABLE"
+        mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$SQL"
+    else
+        log "Table $TABLE already exists. Skipping creation."
+    fi
+}
+
+insert_table() {
+    local TABLE="$1"
+    local RAW_INSERTS
+    RAW_INSERTS=$(xmllint --nocdata --xpath "//table[@name='$TABLE']/inserts/insert" "$DATA_FILE" 2>/dev/null)
+    if [[ -z "$RAW_INSERTS" ]]; then
+        log "No insert entries for $TABLE"
+        return
+    fi
+    log "Inserting data into $TABLE"
+    mapfile -t SQLS < <(xmllint --xpath "//table[@name='$TABLE']/inserts/insert" "$DATA_FILE" 2>/dev/null | sed -n 's|.*<insert>\(.*\)</insert>.*|\1|p')
+    local BATCH_SQL=""
+    for sql in "${SQLS[@]}"; do
+        sql=$(echo "$sql" | xargs)
+        [[ -z "$sql" ]] && continue
+        sql=$(echo "$sql" | sed "s/\`/'/g")
+        sql=$(echo "$sql" | sed -E 's/^INSERT INTO/INSERT IGNORE INTO/i')
+        log "Insert Query for $TABLE Table : $sql"
+        BATCH_SQL+="$sql;"
+        BATCH_SQL+=$'\n'
+    done
+    mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$BATCH_SQL"
+}
+
+install_packages() {
+    log "Running npm install in $SERVER_HOME"
     npm install >> "$LOG_FILE" 2>&1
-    start_server
 }
 
 start_server() {
     log "Starting server"
     npm start >> "$LOG_FILE" 2>&1 &
     sleep 2
-    PID=$(pgrep -f "$SERVER_SCRIPT" | sed -n '2p')
+    PID=$(pgrep -f "$SERVER_SCRIPT" | head -n 1)
     if [ -n "$PID" ]; then
         consoleLog "Server started successfully with PID $PID"
     else
@@ -116,23 +142,21 @@ start_server() {
 }
 
 main() {
-    consoleLog "Check with startup.log for more detailed logs"
+    consoleLog "Check startup.log for detailed logs"
     check_existing_process
     check_npm_installed
     prepare_logs
+    cd "$SERVER_HOME" || {
+        consoleLog "ERROR: Failed to change to server directory: $SERVER_HOME"
+        exit 1
+    }
     if [ -n "$1" ]; then
         cold_start "$1"
-    else
-        cd "$(dirname "$0")/../server" || {
-            consoleLog "ERROR: Failed to change to server directory."
-            exit 1
-        }
-        if [ ! -d "node_modules" ]; then
-            consoleLog "ERROR: node_modules is missing. Please do cold start first."
-            exit 1
-        fi
-        start_server
+    elif [ ! -d "node_modules" ]; then
+        consoleLog "ERROR: node_modules is missing. Run cold start."
+        exit 1
     fi
+    start_server
 }
 
 main "$@"

@@ -1,15 +1,46 @@
+<!--   SQL RULES FOR dacdb.xml
+
+ CREATE TABLE RULES :
+ 
+ 1. Each <table> must contain a full CREATE TABLE statement inside <sql>.
+ 2. The script will automatically rewrite: CREATE TABLE <name> to: CREATE TABLE IF NOT EXISTS <name> (case-insensitive)
+ 3. CREATE TABLE is executed only if the table does NOT already exist.
+ 4. Use BackTick instead of Single Quotes.
+ 
+ INSERT RULES :
+ 
+ 1. All <insert> entries must contain a valid INSERT INTO ... VALUES() statement.
+ 2. The script automatically rewrites: INSERT INTO to: INSERT IGNORE INTO (case-insensitive)
+ 3. All inserts for a table are batched and executed in one MySQL call.
+ 4. Whitespace around insert statements is automatically trimmed. 
+ 5. Use BackTick instead of Single Quotes.
+ 
+ -->
+
 <database>
-    <table name="testing">
+
+    <table name="DacConfiguration">
         <sql>
-            CREATE TABLE IF NOT EXISTS testing (
-                id INT PRIMARY KEY AUTO_INCREMENT,
-                test VARCHAR(50),
-            );
+            CREATE TABLE DacConfiguration ( PROPNAME VARCHAR(100) PRIMARY KEY, PROPVAL VARCHAR(255));
         </sql>
         <inserts>
-            <insert>
-                INSERT INTO testing values('test');
-            </insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`authentication-key`, `mKvoMWhF0motX7YlO9ZSAU9y`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`db-password-key`, `4tvbwdLAVhHCRGw33s17427CfTn`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`user-password-key`, `FT38Hq1mT4LYJBGL9pjWdIgXuIO`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`user-session-count-limit`, `5`);</insert>
         </inserts>
     </table>
+
+    <table name="DacUser">
+        <sql>
+            CREATE TABLE DacUser ( USER_ID INT PRIMARY KEY AUTO_INCREMENT, USER_NAME VARCHAR(100), PASSWORD VARCHAR(255));
+        </sql>
+    </table>
+
+    <table name="UserSessionInfo">
+        <sql>
+            CREATE TABLE UserSessionInfo ( SESSION_ID INT PRIMARY KEY AUTO_INCREMENT, USER_ID INT, DIGEST VARCHAR(255), LOGIN_TIME BIGINT, LAST_ACCESS_TIME BIGINT, MACHINE_IP VARCHAR(50), OS VARCHAR(100), BROWSER VARCHAR(100), DEVICE_TYPE VARCHAR(50), FOREIGN KEY (USER_ID) REFERENCES DacUser(USER_ID));
+        </sql>
+    </table>
+
 </database>

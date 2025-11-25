@@ -5,6 +5,10 @@ Upcoming Commit Works : Login API testing via UI. Initial Deployment Configurati
 
 Commits:
 
+#8 : Enhanced run.sh and Updated dacdb.xml
+#7 : Enhancement in DacLogger - added className in the Log and minor fixes
+#6 : Removed .gitignore and added UserSessionInfo UI Page
+#5 : Removed the exposed credentials in code and added to separate file
 #4 : Added Frontend UI Components (Layouts, Components, Pages), Login Page UI, API Services, Authentication Services.
 #3 : Bug Fixes and Module Testing - Authentication Module Manual Backend Testing Done.
 #2 : Authentication Module - Encryption Algorithms, Middlewares, SessionInvalidatorSchedule, Authentication APIs 
