@@ -1,7 +1,7 @@
 import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js';
 import User from '../conf/User.js';
-import paramSchema from './params-security.json' assert { type: "json" };
+import paramSchema from './params-security.json' with { type: "json" };
 const LOGGER = new DacLogger("ParameterValidator.js");
 
 /*

@@ -89,10 +89,12 @@ populate_tables() {
 create_table() {
     local TABLE="$1"
     if ! mysql -u"$MYSQL_USER" -D "$DB_NAME" -e "SHOW TABLES LIKE '$TABLE';" 2>/dev/null | grep -q "$TABLE"; then
-        local RAW_SQL
-        RAW_SQL=$(xmllint --nocdata --xpath "//table[@name='$TABLE']/sql" "$DATA_FILE" 2>/dev/null)
-        local SQL=$(echo "$RAW_SQL" | sed -n 's|<sql>\(.*\)</sql>|\1|p' | tr -d '\n\r' | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
-        log "Creating table: $TABLE"
+        local SQL
+        SQL=$(xmllint --nocdata --xpath "string(//table[@name='$TABLE']/sql)" "$DATA_FILE" 2>/dev/null)
+        SQL=$(echo "$SQL" | tr -d '\n\r')
+        SQL=$(echo "$SQL" | xargs)
+        SQL=$(echo "$SQL" | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
+        log "Create Table Query for $TABLE Table : $SQL"
         mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$SQL"
     else
         log "Table $TABLE already exists. Skipping creation."

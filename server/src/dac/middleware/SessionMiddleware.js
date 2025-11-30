@@ -6,7 +6,7 @@ import Level from '../conf/Level.js';
 import DacConfiguration from '../conf/DacConfiguration.js';
 import DacQueries from '../conf/DacQueries.js';
 import User from '../conf/User.js';
-import paramSchema from './params-security.json' assert { type: "json" };
+import paramSchema from './params-security.json' with { type: "json" };
 const LOGGER = new DacLogger("SessionMiddleware.js");
 
 class SessionMiddleware {
