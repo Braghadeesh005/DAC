@@ -49,6 +49,17 @@ class DacUtil{
         const second = get('second');
         return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
     }
+
+    static isNullOrEmptyObject(obj) {
+        if (obj === null || obj === undefined) {
+            return true;
+        }
+        if (typeof obj !== "object" || Array.isArray(obj)) {
+            throw new Error("Invalid data type. Expected a plain object.");
+        }
+        return Object.keys(obj).length === 0;
+    }
+
 }
 
 export default DacUtil;

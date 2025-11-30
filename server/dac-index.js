@@ -44,7 +44,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientBuildPath = path.resolve(__dirname, './client/dac/build');
 app.use(express.static(clientBuildPath));
-app.get('/', (req, res) => {
+app.get('/{*any}', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 

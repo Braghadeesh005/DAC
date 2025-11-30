@@ -15,7 +15,7 @@ class DacAuthentication {
             const rows = await DBUtil.getResults(DacQueries.QUERY_GET_USER, [username]);
             if (!rows || rows.length === 0) {
                 LOGGER.log(Level.WARNING, `User not found: ${username}`);
-                throw new Error('User not found');
+                return {};
             }
             const { USER_ID: userId, PASSWORD: password } = rows[0];
             return { userId, password };

@@ -4,6 +4,7 @@ import Level from '../src/dac/conf/Level.js';
 import User from '../src/dac/conf/User.js';
 import DacAuthentication from '../src/dac/authentication/DacAuthentication.js';
 import ClientInfoExtractor from '../src/dac/util/ClientInfoExtracter.js';
+import DacUtil from '../src/dac/util/DacUtil.js';
 const router = express.Router();
 const LOGGER = new DacLogger("AutheticationApi.js");
 
@@ -16,6 +17,10 @@ router.post('/login', async (req, res) => {
   const {username, password} = req.body;
   try{
     const userData = await DacAuthentication.getUserCredentials(username);
+    if(DacUtil.isNullOrEmptyObject(userData)){
+      LOGGER.log(Level.WARNING, 'Provided User not found');
+      return res.status(400).json({ error: `Provided User not found` });
+    }
     const allowed = await DacAuthentication.isSessionCountReached(userData.userId);
     if (!allowed) {
       LOGGER.log(Level.WARNING, 'User Session Count Reached');

@@ -5,17 +5,30 @@ import DacLogger from '../util/DacLogger.js';
 import Level from '../conf/Level.js';
 import DacConfiguration from '../conf/DacConfiguration.js';
 import DacQueries from '../conf/DacQueries.js';
-import ParameterValidator from './ParameterValidator.js';
 import User from '../conf/User.js';
+import paramSchema from './params-security.json' assert { type: "json" };
 const LOGGER = new DacLogger("SessionMiddleware.js");
 
 class SessionMiddleware {
 
+    static skipUpdate(path) {
+        if (!path.startsWith("/api")) {
+            LOGGER.log(Level.INFO, "Frontend route — skipping last access update.");
+            return true;
+        }
+        const rules = paramSchema[path];
+        if (rules && rules.skipLastAccess) {
+            LOGGER.log(Level.INFO, `Special API ${path} — skipping last access update.`);
+            return true;
+        }
+        return false;
+    }
+
     static updateLastAccessTime() {
         return async (req, res, next) => {
             try {
-                if (ParameterValidator.RE_LOGIN.test(req.path) || ParameterValidator.RE_CHECK_SESSION_VALIDITY.test(req.path)) {
-                    LOGGER.log(Level.INFO, "Login API / Session Validation API Called. No need of Updating Last Access Time.");
+                LOGGER.log(Level.INFO, `Update Last Access Time Middleware called for API Path : ${req.path}`);
+                if(this.skipUpdate(req.path)){
                     return next();
                 }
                 const authKey = await this._getAuthKey();

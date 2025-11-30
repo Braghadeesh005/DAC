@@ -2,7 +2,7 @@ import { apiPost } from './api.js';
 
 export const checkSession = async () => {
   try {
-    const data = await apiPost('/auth/session');
+    const data = await apiPost('/api/auth/session');
     return data.isValid;
   } catch (err) {
     console.error('Session check failed:', err);
@@ -12,7 +12,7 @@ export const checkSession = async () => {
 
 export const login = async (username, password) => {
   try {
-    const data = await apiPost('/auth/login', { username, password });
+    const data = await apiPost('/api/auth/login', { username, password });
     return { success: true, userId: data.userId };
   } catch (err) {
     console.error('Login error:', err.message);
