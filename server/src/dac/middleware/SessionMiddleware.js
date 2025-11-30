@@ -6,19 +6,20 @@ import Level from '../conf/Level.js';
 import DacConfiguration from '../conf/DacConfiguration.js';
 import DacQueries from '../conf/DacQueries.js';
 import User from '../conf/User.js';
-import paramSchema from './params-security.json' with { type: "json" };
 const LOGGER = new DacLogger("SessionMiddleware.js");
 
 class SessionMiddleware {
 
-    static skipUpdate(path) {
-        if (!path.startsWith("/api")) {
+    static skipRoutes = ['api/auth/login', 'api/auth/session'];
+    
+    static skipUpdate(realPath) {
+        const path = realPath.replace(/^\/+|\/+$/g, "");
+        if (!path.startsWith("api")) {
             LOGGER.log(Level.INFO, "Frontend route — skipping last access update.");
             return true;
         }
-        const rules = paramSchema[path];
-        if (rules && rules.skipLastAccess) {
-            LOGGER.log(Level.INFO, `Special API ${path} — skipping last access update.`);
+        if (this.skipRoutes.includes(path)) {
+            LOGGER.log(Level.INFO, `Special API : ${path} — skipping last access update.`);
             return true;
         }
         return false;

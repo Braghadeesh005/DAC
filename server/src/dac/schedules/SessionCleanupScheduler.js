@@ -13,7 +13,7 @@ class SessionCleanupScheduler {
             const currentEpoch = Math.floor(Date.now() / 1000);
             const rows = await DBUtil.getResults(DacQueries.QUERY_GET_ALL_SESSIONS);
             const expiredSessionIdList = rows
-                .filter(row => (currentEpoch - row.LAST_ACCESSED_TIME) > 600)
+                .filter(row => (currentEpoch - row.LAST_ACCESS_TIME) > 600)
                 .map(row => row.SESSION_ID);
             if (DacUtil.isEmptyList(expiredSessionIdList)) {
                 LOGGER.log(Level.INFO, 'No expired sessions found.',User.SCHEDULE);

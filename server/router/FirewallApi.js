@@ -1,6 +1,7 @@
 import express from 'express';
 import DacLogger from '../src/dac/util/DacLogger.js';
 import Level from '../src/dac/conf/Level.js';
+import User from '../src/dac/conf/User.js';
 const router = express.Router();
 const LOGGER = new DacLogger("FireWallApi.js");
 

@@ -32,7 +32,6 @@ SUPPORTED PROPERTIES FOR EACH PARAMETER:
 7.  regex                : string (Regular expression string that the value must match)
 8.  items                : Object (Validation rules for elements inside an array (only if type = "array"))
 9.  custom               : string (Name of a custom validator defined in ParameterValidator.CUSTOM_VALIDATORS)
-10. skipLastAccess       : boolean (true / false)
 
 */
 

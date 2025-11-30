@@ -30,8 +30,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 //Middlewares
-app.use(SessionMiddleware.updateLastAccessTime());
 app.use(ParameterValidator.validate());
+app.use(SessionMiddleware.updateLastAccessTime());
 
 // APIs
 app.use('/api/auth', AuthenticationApi);
