@@ -23,9 +23,9 @@ Follow these steps for a complete installation and initial run:
     git clone https://github.com/Braghadeesh005/DAC.git
     ```
     *(Alternatively, download the zip file).*
-2.  **Rename and Placement:**
+2.  **Rename to `dac`:**
     ```bash
-    mv DAC ~/dac
+    mv <CLONED_REPO> ~/dac
     ```
     Rename the cloned directory to `dac`.
 3.  **Configure `run.sh` Variables:**
