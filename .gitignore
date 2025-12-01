@@ -1,0 +1,7 @@
+backup
+logs
+server/client/dac/build
+server/client/dac/node_modules
+server/config-properties.env
+server/node_modules
+server/test

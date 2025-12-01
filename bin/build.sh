@@ -36,6 +36,7 @@ backup_build() {
 
 run_build() {
     log "Running 'npm run build'..."
+    npm install || error_exit "Required Packages Installation Failed Possibly due to npm install Error"
     npm run build || error_exit "Build command failed."
 }
 
