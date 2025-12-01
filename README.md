@@ -36,10 +36,10 @@ Follow these steps for a complete installation and initial run:
     | Variable | Description |
     | :--- | :--- |
     | `MACHINE_IP` | The IP address of the machine. |
-    | `DB_USER` | MySQL user for DAC. |
+    | `DB_USER` | MySQL user for DAC. (must be the same as MYSQL_USER in run.sh) |
     | `DB_PASS` | Password for `DB_USER`. |
     | `DB_PORT` | MySQL port (default is usually 3306). |
-    | `DB_NAME` | Name of the DAC database. |
+    | `DB_NAME` | Name of the DAC database. (must be the same as DB_NAME in run.sh) |
 5.  **Build the Client:**
     Run the build script to compile the client source code:
     ```bash

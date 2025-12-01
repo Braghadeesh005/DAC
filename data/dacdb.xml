@@ -35,6 +35,9 @@
         <sql>
             CREATE TABLE DacUser ( USER_ID INT PRIMARY KEY AUTO_INCREMENT, USER_NAME VARCHAR(100), PASSWORD VARCHAR(255));
         </sql>
+        <inserts>
+            <insert> INSERT INTO DacUser (USER_NAME,PASSWORD) VALUES(`admin`,`L5ebHT5vVswhClQgXV0KUw`); </insert> <!--default user admin-->
+        </inserts>
     </table>
 
     <table name="UserSessionInfo">
