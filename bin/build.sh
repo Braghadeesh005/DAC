@@ -50,6 +50,10 @@ rename_dist_to_build() {
 }
 
 main() {
+    if [ ! -f "$LOG_FILE" ]; then
+        mkdir -p "$(dirname "$LOG_FILE")"
+        touch "$LOG_FILE"
+    fi
     cd "$CLIENT_DIR" || error_exit "Cannot navigate to client directory: $CLIENT_DIR"
     log "Current directory: $(pwd)"
     backup_build
