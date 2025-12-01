@@ -18,16 +18,16 @@ To successfully set up and run DAC, ensure your machine meets the following requ
 
 Follow these steps for a complete installation and initial run:
 
-1.  **Clone Repository:**
+1.  **Clone Repository in your Home Directory (`~/`):**
     ```bash
-    git clone <Your_Repo_URL>
+    git clone https://github.com/Braghadeesh005/DAC.git
     ```
     *(Alternatively, download the zip file).*
 2.  **Rename and Placement:**
     ```bash
-    mv <cloned_repo_dir> ~/dac
+    mv DAC ~/dac
     ```
-    Rename the cloned directory to `dac` and place it in your **Home Directory (`~/`)**.
+    Rename the cloned directory to `dac`.
 3.  **Configure `run.sh` Variables:**
     Review and cross-check the variables inside `~/dac/bin/run.sh` (specifically the database user and database name).
 4.  **Create Configuration File:**
