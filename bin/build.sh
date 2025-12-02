@@ -6,7 +6,13 @@ set -u
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLIENT_DIR="$PROJECT_ROOT/server/client/dac"
 BACKUP_DIR="$PROJECT_ROOT/backup"
-LOG_FILE="$PROJECT_ROOT/logs/build.log"
+LOG_DIR="$PROJECT_ROOT/logs"
+LOG_FILE="$LOG_DIR/build.log"
+
+createLogDirectory() {
+    mkdir -p "$LOG_DIR"
+    log "Log dir is created"
+}
 
 log() {
     echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -25,10 +31,10 @@ backup_build() {
         mkdir -p "$BACKUP_DIR"
         TIMESTAMP=$(date +"%d-%m-%Y_%H_%M")
         ARCHIVE_NAME="build_$TIMESTAMP.tar"
-        tar -cf "$BACKUP_DIR/$ARCHIVE_NAME" build || error_exit "Failed to archive build directory."
+        mv build "$BACKUP_DIR/build_$TIMESTAMP" || error_exit "Failed to move build directory to backup."
+        log "Moved 'build' to $BACKUP_DIR/build_$TIMESTAMP"
+        tar -cf "$BACKUP_DIR/$ARCHIVE_NAME" -C "$BACKUP_DIR" "build_$TIMESTAMP" || error_exit "Failed to archive build directory."
         log "Backup created at $BACKUP_DIR/$ARCHIVE_NAME"
-        rm -rf build || error_exit "Failed to remove old build directory."
-        log "Old build directory removed."
     else
         log "'build' directory not found. Skipping backup."
     fi
@@ -50,12 +56,8 @@ rename_dist_to_build() {
 }
 
 main() {
-    if [ ! -f "$LOG_FILE" ]; then
-        mkdir -p "$(dirname "$LOG_FILE")"
-        touch "$LOG_FILE"
-    fi
+    createLogDirectory
     cd "$CLIENT_DIR" || error_exit "Cannot navigate to client directory: $CLIENT_DIR"
-    log "Current directory: $(pwd)"
     backup_build
     run_build
     rename_dist_to_build

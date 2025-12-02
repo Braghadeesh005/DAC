@@ -16,26 +16,25 @@ log() {
 }
 
 consoleLog() {
-    echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    log "$1"
     echo -e "$1"
+}
+
+error_exit() {
+    consoleLog "$1"
+    exit 1
 }
 
 check_existing_process() {
     log "Checking if $SERVER_SCRIPT_FULL_PATH is already running"
     ABSOLUTE_SCRIPT_PATH="$(realpath "$SERVER_SCRIPT_FULL_PATH")"
-    if [ ! -f "$ABSOLUTE_SCRIPT_PATH" ]; then
-        consoleLog "ERROR: Script file $ABSOLUTE_SCRIPT_PATH not found."
-        exit 1
-    fi
     PID=$(ps aux | grep "node" | grep "$ABSOLUTE_SCRIPT_PATH" | grep -v grep | awk '{print $2}')
     if [ -n "$PID" ]; then
-        consoleLog "ERROR: $ABSOLUTE_SCRIPT_PATH is already running with PID $PID"
-        exit 1
+        error_exit "ERROR: $ABSOLUTE_SCRIPT_PATH is already running with PID $PID"
     fi
     log "Checking if port $SERVER_PORT is occupied"
     if netstat -tuln | grep -q ":$SERVER_PORT[[:space:]]"; then
-        consoleLog "ERROR: Port $SERVER_PORT is already in use"
-        exit 1
+        error_exit "ERROR: Port $SERVER_PORT is already in use"
     fi
     log "No existing process or port usage detected"
 }
@@ -43,17 +42,9 @@ check_existing_process() {
 check_npm_installed() {
     log "Checking if npm is installed"
     if ! command -v npm > /dev/null 2>&1; then
-        consoleLog "ERROR: npm is not installed. Please install Node.js and npm."
-        exit 1
+        error_exit "ERROR: npm is not installed. Please install Node.js and npm."
     fi
     log "npm is installed"
-}
-
-prepare_logs() {
-    log "Ensuring log directory and file exist"
-    mkdir -p "$LOG_DIR"
-    touch "$LOG_FILE"
-    log "Log file ready at $LOG_FILE"
 }
 
 cold_start() {
@@ -66,16 +57,9 @@ cold_start() {
 }
 
 create_db() {
-    log "Checking if DB '$DB_NAME' exists"
-    local EXISTS
-    EXISTS=$(mysql -u"$MYSQL_USER" -e "SHOW DATABASES LIKE '$DB_NAME';" 2>/dev/null | grep "$DB_NAME")
-    if [ -z "$EXISTS" ]; then
-        log "Creating DB '$DB_NAME'"
-        mysql -u"$MYSQL_USER" -e "CREATE DATABASE $DB_NAME;" || {
-            consoleLog "ERROR: Failed to create database."
-            exit 1
-        }
-    fi
+    log "Checking and creating DB '$DB_NAME' if missing"
+    log "Creating DB '$DB_NAME'"
+    mysql -u"$MYSQL_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;" || error_exit "ERROR: Failed to create database."
 }
 
 populate_tables() {
@@ -88,18 +72,14 @@ populate_tables() {
 
 create_table() {
     local TABLE="$1"
-    if ! mysql -u"$MYSQL_USER" -D "$DB_NAME" -e "SHOW TABLES LIKE '$TABLE';" 2>/dev/null | grep -q "$TABLE"; then
-        local SQL
-        SQL=$(xmllint --nocdata --xpath "string(//table[@name='$TABLE']/sql)" "$DATA_FILE" 2>/dev/null)
-        SQL=$(echo "$SQL" | tr -d '\n\r')
-        SQL=$(echo "$SQL" | xargs)
-        SQL=$(echo "$SQL" | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
-        log "Create Table Query for $TABLE Table : $SQL"
-        mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$SQL"
-    else
-        log "Table $TABLE already exists. Skipping creation."
-    fi
-}
+    local SQL
+    SQL=$(xmllint --nocdata --xpath "string(//table[@name='$TABLE']/sql)" "$DATA_FILE" 2>/dev/null)
+    SQL=$(echo "$SQL" | tr -d '\n\r')
+    SQL=$(echo "$SQL" | xargs)
+    SQL=$(echo "$SQL" | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
+    log "Create Table Query for $TABLE Table : $SQL"
+    mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$SQL"
+ }
 
 insert_table() {
     local TABLE="$1"
@@ -137,7 +117,7 @@ start_server() {
     if [ -n "$PID" ]; then
         consoleLog "Server started successfully with PID $PID"
     else
-        consoleLog "ERROR: Failed to start server."
+        error_exit "ERROR: Failed to start server."
     fi
 }
 
@@ -145,16 +125,13 @@ main() {
     consoleLog "Check startup.log for detailed logs"
     check_existing_process
     check_npm_installed
-    prepare_logs
     cd "$SERVER_HOME" || {
-        consoleLog "ERROR: Failed to change to server directory: $SERVER_HOME"
-        exit 1
+        error_exit "ERROR: Failed to change to server directory: $SERVER_HOME"
     }
     if [ -n "$1" ]; then
         cold_start "$1"
     elif [ ! -d "node_modules" ]; then
-        consoleLog "ERROR: node_modules is missing. Run cold start."
-        exit 1
+        error_exit "ERROR: node_modules is missing. Run cold start."
     fi
     start_server
 }
