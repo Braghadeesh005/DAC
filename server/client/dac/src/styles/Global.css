@@ -23,3 +23,11 @@ html, body {
   --theme-color-default: rgb(255, 255, 255);
   --font-primary: var(--theme-color-default);
 }
+
+.center-content {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}

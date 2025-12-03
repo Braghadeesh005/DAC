@@ -7,6 +7,7 @@ import LbHome from './pages/lb/LbHome';
 import Cage from './pages/inventory/Cage';
 import Profile from './pages/profile/Profile';
 import ColorThemePicker from './pages/profile/ColorThemePicker/ColorThemePicker';
+import NotFound from './pages/NotFound/NotFound';
 import './styles/Global.css';
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
       <Route path='/profile/home' element={<Profile />} />
       <Route path='/profile/editheme' element={<ColorThemePicker />} />
 
+      <Route path='*' element={<NotFound />} /> 
     </Routes>
   );
 }
