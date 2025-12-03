@@ -53,7 +53,7 @@ class DacAuthentication {
             res.cookie('dac-token', encryptedDigestForAuth, {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'Strict'
+                sameSite: 'None'
             });
             const currentTimeEpoch = Math.floor(Date.now() / 1000);
             await DBUtil.executeUpdate(DacQueries.QUERY_INSERT_SESSION, [userId, digest, currentTimeEpoch, currentTimeEpoch, ip, os, browser, deviceType]);

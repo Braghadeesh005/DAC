@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
+import cors from 'cors';
 
 // Utils
 import DacStartup from './src/dac/startup/DacStartup.js';
@@ -21,6 +22,25 @@ import ParameterValidator from './src/dac/middleware/ParameterValidator.js';
 
 const app = express();
 const PORT = 4000;
+
+/*  
+    CORS Configuration :
+      1. Currently CORS is set for HTTPS Cross-Origin requests only.
+      2. For Dev Same-Origin requests, Set MACHINE_IP as localhost in config-properties.env.
+      3. For Dev Cross-Origin requests, update browser's properties for testing. 
+*/
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, false);
+      cb(null, origin);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  })
+);
 
 // Initialize Startup Class
 DacStartup.initialize();

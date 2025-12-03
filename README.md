@@ -35,11 +35,12 @@ Follow these steps for a complete installation and initial run:
 
     | Variable | Description |
     | :--- | :--- |
-    | `MACHINE_IP` | The IP address of the machine. |
+    | `MACHINE_IP` | The IP address of the machine. (localhost - if Development Environment) |
     | `DB_USER` | MySQL user for DAC. (must be the same as MYSQL_USER in run.sh) |
     | `DB_PASS` | Password for `DB_USER`. |
     | `DB_PORT` | MySQL port (default is usually 3306). |
     | `DB_NAME` | Name of the DAC database. (must be the same as DB_NAME in run.sh) |
+    | `IS_HTTPS` | Controls activation of HTTPS support (Optional) |
 5.  **Build the Client:**
     Run the build script to compile the client source code:
     ```bash
@@ -80,7 +81,7 @@ Follow these steps for a complete installation and initial run:
 | │   ├── `startup.log` | DAC startup logs. |
 | │   └── `build.log` | Client build logs. |
 | ├── `server/` | Server-side application code. |
-| │   ├── `client/dac/build/` | Client production build (after `build.sh`). |
+| │   ├── `client/dac/` | Client-side Application code. |
 | │   ├── `router/` | Routing configuration for each module. |
 | │   ├── `src/dac/authentication/` | Authentication module implementation. |
 | │   ├── `src/dac/conf/` | Configuration files. |
@@ -91,45 +92,3 @@ Follow these steps for a complete installation and initial run:
 | │   ├── `src/dac/startup/` | Server startup logic. |
 | │   └── `dac-index.js` | Main server entry point. |
 | └── `.gitignore` | Files ignored by Git. |
-
-### Scripts & Core Functions
-
-#### 1. `run.sh` Script
-* **Logging:** All script logs are written to `startup.log`.
-* **Pre-checks:** Checks for processes running on the same port (4000) and verifies `npm` installation.
-* **Log Preparation:** Ensures the `logs` directory structure is created.
-* **Startup Logic:** Detects if a **Cold** or **Warm** start is required.
-    * **Cold Start:** Requires the MySQL root password as an argument. Checks for database existence; if not found, it creates the DB, populates data from `dacdb.xml`, and then calls server startup.
-    * **Warm Start:** Directly calls the server startup.
-* **Server Invocation:** Calls `npm start`, which invokes `dac-index.js`.
-
-#### 2. `build.sh` Script
-* **Backup:** If an existing client build is found, it is archived using `tar` and moved to the `/backup` directory.
-* **Build:** Runs `npm run build` inside the client directory.
-* **Rename:** Renames the resulting build folder (`dist`) to `build`.
-
-#### 3. `dac-index.js` (Server Entry Point)
-* **Logging:** Initializes DAC logs via the dedicated logs class.
-* **Database:**
-    * `DB Connection class`: Provides a function to return the database connection object.
-    * `Create DB Class`: Contains methods for all DB operations, leveraging the `DB Connection class`.
-* **Startup:** Initializes the `Startup class`, which handles schedules that must run during server startup.
-* **Client Rendering:** Renders the React frontend client in the root path (`/`), merging it into the same port (4000).
-* **API Routing:** Connects with router pages for each module. All APIs are prefixed with `/api`.
-
----
-
-## 🌟 Commits History
-
-| ID | Description |
-| :--- | :--- |
-| **#13-14** | Fixed build.sh related issues. |
-| **#10-12** | Fixed Authentication Related Issues. |
-| **#8, 9** | Enhanced run.sh and updated dacdb.xml. |
-| **#7** | Enhancement in DacLogger - added `className` in the Log and minor fixes. |
-| **#6** | Removed `.gitignore` and added `UserSessionInfo` UI Page. |
-| **#5** | Removed exposed credentials in code and added them to a separate file (`config-properties.env`). |
-| **#4** | Added Frontend UI Components (Layouts, Components, Pages), Login Page UI, API Services, and Authentication Services. |
-| **#3** | Bug Fixes and Module Testing - Authentication Module Manual Backend Testing Done. |
-| **#2** | Authentication Module - Encryption Algorithms, Middlewares, SessionInvalidatorSchedule, Authentication APIs. |
-| **#1** | Base Setup - run.sh, build.sh, server, client, logs. |

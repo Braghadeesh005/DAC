@@ -1,13 +1,12 @@
 #!/bin/bash
-
-set -e 
-set -u
-
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CLIENT_DIR="$PROJECT_ROOT/server/client/dac"
-BACKUP_DIR="$PROJECT_ROOT/backup"
-LOG_DIR="$PROJECT_ROOT/logs"
+PROJECT_HOME="$HOME/dac"
+CLIENT_DIR="$PROJECT_HOME/server/client/dac"
+BACKUP_DIR="$PROJECT_HOME/backup"
+LOG_DIR="$PROJECT_HOME/logs"
 LOG_FILE="$LOG_DIR/build.log"
+SERVER_DIR="$PROJECT_HOME/server"
+ENV_FILE="$SERVER_DIR/config-properties.env"
+PROTOCOL="http"
 
 createLogDirectory() {
     mkdir -p "$LOG_DIR"
@@ -31,13 +30,39 @@ backup_build() {
         mkdir -p "$BACKUP_DIR"
         TIMESTAMP=$(date +"%d-%m-%Y_%H_%M")
         ARCHIVE_NAME="build_$TIMESTAMP.tar"
-        mv build "$BACKUP_DIR/build_$TIMESTAMP" || error_exit "Failed to move build directory to backup."
-        log "Moved 'build' to $BACKUP_DIR/build_$TIMESTAMP"
-        tar -cf "$BACKUP_DIR/$ARCHIVE_NAME" -C "$BACKUP_DIR" "build_$TIMESTAMP" || error_exit "Failed to archive build directory."
+        tar -cf "$BACKUP_DIR/$ARCHIVE_NAME" build || error_exit "Failed to archive build directory."
         log "Backup created at $BACKUP_DIR/$ARCHIVE_NAME"
+        rm -rf build || error_exit "Failed to remove old build directory."
+        log "Old build directory removed."
     else
         log "'build' directory not found. Skipping backup."
     fi
+}
+
+setEnvVariables() {
+    setAPIUrl
+}
+
+setAPIUrl() {
+    if [[ ! -f "$ENV_FILE" ]]; then
+        error_exit "$ENV_FILE file not found. Please configure it."
+    fi
+    local SERVER_PORT=$(grep -E '^SERVER_PORT=' "$ENV_FILE" | cut -d '=' -f2)
+    local MACHINE_IP=$(grep -E '^MACHINE_IP=' "$ENV_FILE" | cut -d '=' -f2)
+    if [[ -z "$SERVER_PORT" || -z "$MACHINE_IP" ]]; then
+        error_exit "Failed to fetch SERVER_PORT or MACHINE_IP from env file."
+    fi
+    setProtocol
+    export VITE_API_URL="${PROTOCOL}://$MACHINE_IP:$SERVER_PORT"
+    log "API_URL set to $VITE_API_URL"
+}
+
+setProtocol() {
+    local IS_HTTPS=$(grep -E '^IS_HTTPS=' "$ENV_FILE" | cut -d '=' -f2)
+    if [[ "$IS_HTTPS" == "true" ]]; then
+        PROTOCOL="https"
+    fi
+    log "Protocol set to '$PROTOCOL'"
 }
 
 run_build() {
@@ -59,6 +84,7 @@ main() {
     createLogDirectory
     cd "$CLIENT_DIR" || error_exit "Cannot navigate to client directory: $CLIENT_DIR"
     backup_build
+    setEnvVariables
     run_build
     rename_dist_to_build
     log "Build process completed successfully."
