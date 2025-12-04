@@ -40,6 +40,7 @@ Follow these steps for a complete installation and initial run:
     | `DB_PASS` | Password for `DB_USER`. |
     | `DB_PORT` | MySQL port (default is usually 3306). |
     | `DB_NAME` | Name of the DAC database. (must be the same as DB_NAME in run.sh) |
+    | `SERVER_PORT` | The port on which the DAC Server will run |
     | `IS_HTTPS` | Controls activation of HTTPS support (Optional) |
 5.  **Build the Client:**
     Run the build script to compile the client source code:
@@ -47,7 +48,7 @@ Follow these steps for a complete installation and initial run:
     bash ~/dac/bin/build.sh
     ```
 6.  **Port Check:**
-    Ensure that **port 4000** is free, as DAC runs on this port.
+    Ensure the port defined in **`SERVER_PORT`** of **`config-properties.env`** is free, as DAC will run on this port.
 7.  **Cold Start (Initial Setup):**
     Use this command for the **first-time** run, which will create the database and populate initial data. You must provide the **MySQL root user password** as an argument.
     ```bash

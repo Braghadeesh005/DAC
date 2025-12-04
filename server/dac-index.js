@@ -3,6 +3,8 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config({ path: "./config-properties.env" });
 
 // Utils
 import DacStartup from './src/dac/startup/DacStartup.js';
@@ -21,7 +23,7 @@ import SessionMiddleware from './src/dac/middleware/SessionMiddleware.js';
 import ParameterValidator from './src/dac/middleware/ParameterValidator.js';
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.SERVER_PORT;
 
 /*  
     CORS Configuration :

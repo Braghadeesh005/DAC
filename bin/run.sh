@@ -1,6 +1,5 @@
 #!/bin/bash
 
-SERVER_PORT=4000
 PROJECT_HOME="$HOME/dac"
 SERVER_HOME="$PROJECT_HOME/server"
 SERVER_SCRIPT="dac-index.js"
@@ -10,6 +9,7 @@ LOG_FILE="$LOG_DIR/startup.log"
 DB_NAME="dacdb"
 DATA_FILE="$PROJECT_HOME/data/dacdb.xml"
 MYSQL_USER="root"
+ENV_FILE="$SERVER_HOME/config-properties.env"
 
 log() {
     echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -31,6 +31,11 @@ check_existing_process() {
     PID=$(ps aux | grep "node" | grep "$ABSOLUTE_SCRIPT_PATH" | grep -v grep | awk '{print $2}')
     if [ -n "$PID" ]; then
         error_exit "ERROR: $ABSOLUTE_SCRIPT_PATH is already running with PID $PID"
+    fi
+    local SERVER_PORT=$(grep -E '^SERVER_PORT=' "$ENV_FILE" | cut -d '=' -f2)
+    log "Checking if port $SERVER_PORT is available in env file"
+    if [[ -z "$SERVER_PORT" ]]; then
+        error_exit "Failed to fetch SERVER_PORT from env file."
     fi
     log "Checking if port $SERVER_PORT is occupied"
     if netstat -tuln | grep -q ":$SERVER_PORT[[:space:]]"; then

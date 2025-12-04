@@ -37,12 +37,16 @@ class DacAuthentication {
 
     static async validateLoginCredentials(inputPassword, encryptedPasswordFromDB) {
         try {
-            const userPassKey = await DacConfiguration.get(DacConfiguration.PROP_USER_PASSWORD_KEY);
-            return AuraCrypt.decrypt(encryptedPasswordFromDB, StreamObfuscator.decrypt(userPassKey)) === inputPassword;
+            return await DacAuthentication.decryptUserPassword(encryptedPasswordFromDB) === inputPassword;
         } 
         catch (err) {
             throw new Error(`validateLoginCredentials() failed: ${err.message}`);
         }
+    }
+
+    static async decryptUserPassword(encryptedPasswordFromDB) {
+        const userPassKey = await DacConfiguration.get(DacConfiguration.PROP_USER_PASSWORD_KEY);
+        return AuraCrypt.decrypt(encryptedPasswordFromDB, StreamObfuscator.decrypt(userPassKey));
     }
 
     static async createSession(userId, ip, os, browser, deviceType, res) {

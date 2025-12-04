@@ -8,7 +8,25 @@ class DacUser {
 
   #userId;
   #userName;
+  #password;
   static #cacheMap = new Map();
+
+  constructor(userId, userName, password) {
+    this.#userId = userId;
+    this.#userName = userName;
+    this.#password = password;
+  }
+
+  static getCachedUser(userId) {
+    return this.#cacheMap.get(userId);
+  }
+
+  static createAndSetUserInCache(userId, userName, password) {
+    let instance = new DacUser(userId, userName, password);
+    this.#cacheMap.set(userId, instance);
+    LOGGER.log(Level.FINE, `User details updated in cache`);
+    return instance;
+  }
 
   static async getUserInstance(userId) {
     if (this.#cacheMap.has(userId)) {
@@ -24,13 +42,14 @@ class DacUser {
   }
 
   async #load(userId) {
-    const result = await DBUtil.getResults(DacQueries.QUERY_FETCH_USER_DETAILS_WITH_ID, [userId]);
+    const result = await DBUtil.getResults(`${DacQueries.QUERY_GET_USER} WHERE USER_ID = ${userId}`);
     if (!result?.[0]) {
         LOGGER.log(Level.ERROR,`User Not Found in the DB`);
         throw new Error(`User not found: ${userId}`);
     }
     this.#userId = result[0].USER_ID;
     this.#userName = result[0].USER_NAME;
+    this.#password = result[0].PASSWORD;
   }
 
   getUserId() {
@@ -39,6 +58,10 @@ class DacUser {
 
   getUserName() {
     return this.#userName;
+  }
+  
+  getPassword() {
+    return this.#password;
   }
   
   static clearCache() {

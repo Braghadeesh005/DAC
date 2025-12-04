@@ -5,6 +5,7 @@ import User from '../src/dac/conf/User.js';
 import DacAuthentication from '../src/dac/authentication/DacAuthentication.js';
 import ClientInfoExtractor from '../src/dac/util/ClientInfoExtracter.js';
 import DacUtil from '../src/dac/util/DacUtil.js';
+import DacUser from '../src/dac/conf/DacUser.js';
 const router = express.Router();
 const LOGGER = new DacLogger("AutheticationApi.js");
 
@@ -34,6 +35,7 @@ router.post('/login', async (req, res) => {
     const { ip, os, browser, deviceType} = ClientInfoExtractor.extract(req);
     LOGGER.log(Level.FINE, 'User Login Successful and created new Session');
     await DacAuthentication.createSession(userData.userId, ip, os, browser, deviceType, res);
+    DacUser.createAndSetUserInCache(userData.userId, userData.userName, DacAuthentication.decryptUserPassword(password));
     return res.status(200).json({ message: `Login Successful`,  userId: userData.userId});
   }
   catch(err){
