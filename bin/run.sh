@@ -1,14 +1,11 @@
 #!/bin/bash
-
 PROJECT_HOME="$HOME/dac"
 SERVER_HOME="$PROJECT_HOME/server"
 SERVER_SCRIPT="dac-index.js"
 SERVER_SCRIPT_FULL_PATH="$SERVER_HOME/$SERVER_SCRIPT"
 LOG_DIR="$PROJECT_HOME/logs"
 LOG_FILE="$LOG_DIR/startup.log"
-DB_NAME="dacdb"
 DATA_FILE="$PROJECT_HOME/data/dacdb.xml"
-MYSQL_USER="root"
 ENV_FILE="$SERVER_HOME/config-properties.env"
 
 log() {
@@ -25,19 +22,25 @@ error_exit() {
     exit 1
 }
 
+populate_env_vars() {
+    if [ ! -f "$ENV_FILE" ]; then
+        error_exit "ERROR: Environment file $ENV_FILE not found."
+    fi
+    DB_NAME=$(grep -E '^DB_NAME=' "$ENV_FILE" | cut -d '=' -f2)
+    DB_USER=$(grep -E '^DB_USER=' "$ENV_FILE" | cut -d '=' -f2)
+    SERVER_PORT=$(grep -E '^SERVER_PORT=' "$ENV_FILE" | cut -d '=' -f2)
+    if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$SERVER_PORT" ]; then
+        error_exit "ERROR: Missing required environment variables in $ENV_FILE."
+    fi
+    log "Environment variables populated: DB_NAME=$DB_NAME, DB_USER=$DB_USER, SERVER_PORT=$SERVER_PORT"
+}
+
 check_existing_process() {
-    log "Checking if $SERVER_SCRIPT_FULL_PATH is already running"
     ABSOLUTE_SCRIPT_PATH="$(realpath "$SERVER_SCRIPT_FULL_PATH")"
     PID=$(ps aux | grep "node" | grep "$ABSOLUTE_SCRIPT_PATH" | grep -v grep | awk '{print $2}')
     if [ -n "$PID" ]; then
         error_exit "ERROR: $ABSOLUTE_SCRIPT_PATH is already running with PID $PID"
     fi
-    local SERVER_PORT=$(grep -E '^SERVER_PORT=' "$ENV_FILE" | cut -d '=' -f2)
-    log "Checking if port $SERVER_PORT is available in env file"
-    if [[ -z "$SERVER_PORT" ]]; then
-        error_exit "Failed to fetch SERVER_PORT from env file."
-    fi
-    log "Checking if port $SERVER_PORT is occupied"
     if netstat -tuln | grep -q ":$SERVER_PORT[[:space:]]"; then
         error_exit "ERROR: Port $SERVER_PORT is already in use"
     fi
@@ -45,7 +48,6 @@ check_existing_process() {
 }
 
 check_npm_installed() {
-    log "Checking if npm is installed"
     if ! command -v npm > /dev/null 2>&1; then
         error_exit "ERROR: npm is not installed. Please install Node.js and npm."
     fi
@@ -63,8 +65,7 @@ cold_start() {
 
 create_db() {
     log "Checking and creating DB '$DB_NAME' if missing"
-    log "Creating DB '$DB_NAME'"
-    mysql -u"$MYSQL_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;" || error_exit "ERROR: Failed to create database."
+    mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;" || error_exit "ERROR: Failed to create database."
 }
 
 populate_tables() {
@@ -83,7 +84,7 @@ create_table() {
     SQL=$(echo "$SQL" | xargs)
     SQL=$(echo "$SQL" | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
     log "Create Table Query for $TABLE Table : $SQL"
-    mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$SQL"
+    mysql -u"$DB_USER" -D "$DB_NAME" <<< "$SQL"
  }
 
 insert_table() {
@@ -106,7 +107,7 @@ insert_table() {
         BATCH_SQL+="$sql;"
         BATCH_SQL+=$'\n'
     done
-    mysql -u"$MYSQL_USER" -D "$DB_NAME" <<< "$BATCH_SQL"
+    mysql -u"$DB_USER" -D "$DB_NAME" <<< "$BATCH_SQL"
 }
 
 install_packages() {
@@ -128,6 +129,7 @@ start_server() {
 
 main() {
     consoleLog "Check startup.log for detailed logs"
+    populate_env_vars
     check_existing_process
     check_npm_installed
     cd "$SERVER_HOME" || {

@@ -28,35 +28,33 @@ Follow these steps for a complete installation and initial run:
     mv <CLONED_REPO> ~/dac
     ```
     Rename the cloned directory to `dac`.
-3.  **Configure `run.sh` Variables:**
-    Review and cross-check the variables inside `~/dac/bin/run.sh` (specifically the database user and database name).
-4.  **Create Configuration File:**
+3.  **Create Configuration File:**
     Navigate to the `/server` directory and create the environment file `config-properties.env`. Add the following variables:
 
     | Variable | Description |
     | :--- | :--- |
-    | `MACHINE_IP` | The IP address of the machine. (localhost - if Development Environment) |
-    | `DB_USER` | MySQL user for DAC. (must be the same as MYSQL_USER in run.sh) |
-    | `DB_PASS` | Password for `DB_USER`. |
-    | `DB_PORT` | MySQL port (default is usually 3306). |
-    | `DB_NAME` | Name of the DAC database. (must be the same as DB_NAME in run.sh) |
+    | `MACHINE_IP` | The IP address of the machine. (localhost - if Dev Environment) |
+    | `DB_USER` | MySQL user for DAC |
+    | `DB_PASS` | Password for `DB_USER` |
+    | `DB_PORT` | Port on which the MySQL Server will run |
+    | `DB_NAME` | Name of the DAC database |
     | `SERVER_PORT` | The port on which the DAC Server will run |
     | `IS_HTTPS` | Controls activation of HTTPS support (Optional) |
-5.  **Build the Client:**
+4.  **Build the Client:**
     Run the build script to compile the client source code:
     ```bash
     bash ~/dac/bin/build.sh
     ```
-6.  **Port Check:**
+5.  **Port Check:**
     Ensure the port defined in **`SERVER_PORT`** of **`config-properties.env`** is free, as DAC will run on this port.
-7.  **Cold Start (Initial Setup):**
+6.  **Cold Start (Initial Setup):**
     Use this command for the **first-time** run, which will create the database and populate initial data. You must provide the **MySQL root user password** as an argument.
     ```bash
     bash ~/dac/bin/run.sh <DB_ROOT_PASSWORD>
     ```
-8.  **Verify Logs:**
+7.  **Verify Logs:**
     Check that the `~/dac/logs` directory has been created. Review `startup.log` and the files in `serverlog/` for any startup or server-related issues.
-9.  **Warm Start (Subsequent Runs):**
+8.  **Warm Start (Subsequent Runs):**
     For all subsequent runs after the initial cold start:
     ```bash
     bash ~/dac/bin/run.sh
