@@ -59,7 +59,7 @@ jobs:
 
       - name: Move Zip into milestone
         run: |
-          cp ../dac_server.zip milestone/default/
+          cp dac_server.zip milestone/default/
 
       - name: Create blog.txt Metadata
         run: |
