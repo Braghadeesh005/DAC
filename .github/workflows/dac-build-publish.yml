@@ -67,8 +67,8 @@ jobs:
           echo "VERSION: $NEW_VERSION" >> blog.txt
           echo "BUILD_TIME: $RUN_TIME_IST" >> blog.txt
           echo "COMMIT_ID: $GITHUB_SHA" >> blog.txt
-          echo "COMMITTER: $GITHUB_ACTOR" >> blog.txt
-          echo "COMMIT_EMAIL: $DEV_EMAIL" >> blog.txt
+          echo "AUTHOR: $GITHUB_ACTOR" >> blog.txt
+          echo "AUTHOR MAIL: $DEV_EMAIL" >> blog.txt
           echo "BRANCH: $GITHUB_REF_NAME" >> blog.txt
           echo "ZIP_NAME: dac_server.zip" >> blog.txt
           echo "ZIP_SIZE: $ZIP_SIZE" >> blog.txt
