@@ -15,45 +15,46 @@ jobs:
       - name: Checkout DAC
         uses: actions/checkout@v4
 
-      # 2. Get Author Email (Dev Email)
+      # 2. Get Author Email
       - name: Get Author Email
         run: |
           DEV_EMAIL=$(git log -1 --pretty=format:'%ae')
           echo "DEV_EMAIL=$DEV_EMAIL" >> $GITHUB_ENV
 
-      # 3. Setup Versioning
+      # 3. Get Build Time IST
+      - name: Get Build Time IST
+        run: |
+          BUILD_TIME_IST=$(date -d '+5 hour +30 minutes' '+%Y-%m-%d %H:%M:%S IST')
+          echo "RUN_TIME_IST=$BUILD_TIME_IST" >> $GITHUB_ENV
+
+      # 4. Clone DAC_Milestone Repo
+      - name: Clone DAC_Milestone Repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/Braghadeesh005/DAC_Milestone.git milestone
+
+      # 5. Setup Versioning
       - name: Setup Versioning
         run: |
-          mkdir -p milestone
-          if [ -f milestone/default/blog.txt ]; then
-            LAST_VERSION=$(grep "VERSION:" milestone/default/blog.txt | tail -1 | awk '{print $2}')
+          cd milestone
+          # Check all existing blog.txt files for last version
+          if [ -d default ] && [ -f default/blog.txt ]; then
+            LAST_VERSION=$(grep "VERSION:" default/blog.txt | tail -1 | awk '{print $2}')
             NEW_VERSION=$(awk "BEGIN {printf \"%.1f\", $LAST_VERSION + 0.1}")
           else
             NEW_VERSION="1.0"
           fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      # 4. Get Build Time IST
-      - name: Get Build Time IST
-        run: |
-          BUILD_TIME_IST=$(date -d '+5 hour +30 minutes' '+%Y-%m-%d %H:%M:%S IST')
-          echo "RUN_TIME_IST=$BUILD_TIME_IST" >> $GITHUB_ENV
-
-      # 5. Create dac_server.zip (exclude .git, .github, README.md)
+      # 6. Create dac_server.zip (exclude .git, .github, README.md, milestone)
       - name: Create DAC Zip
         run: |
-          zip -r dac_server.zip . -x ".git/*" ".github/*" "README.md"
+          zip -r dac_server.zip . -x ".git/*" ".github/*" "README.md" "milestone/*"
 
-      # 6. Calculate Zip Size
+      # 7. Calculate Zip Size
       - name: Get Zip Size
         run: |
           ZIP_SIZE=$(du -h dac_server.zip | cut -f1)
           echo "ZIP_SIZE=$ZIP_SIZE" >> $GITHUB_ENV
-
-      # 7. Clone DAC_Milestone Repo
-      - name: Clone DAC_Milestone Repo
-        run: |
-          git clone https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/Braghadeesh005/DAC_Milestone.git milestone
 
       # 8. Archive Old default Folder
       - name: Archive Old Default
@@ -68,12 +69,12 @@ jobs:
       # 9. Move Zip into default
       - name: Move Zip
         run: |
-          mv dac_server.zip milestone/default/
+          mv ../dac_server.zip default/
 
       # 10. Create blog.txt Metadata
       - name: Create blog.txt
         run: |
-          cd milestone/default
+          cd default
           echo "VERSION: $NEW_VERSION" >> blog.txt
           echo "BUILD_TIME: $RUN_TIME_IST" >> blog.txt
           echo "COMMIT_ID: $GITHUB_SHA" >> blog.txt
@@ -83,7 +84,7 @@ jobs:
           echo "ZIP_NAME: dac_server.zip" >> blog.txt
           echo "ZIP_SIZE: $ZIP_SIZE" >> blog.txt
 
-      # 11. Commit & Push
+      # 11. Commit & Push to DAC_Milestone
       - name: Commit & Push
         run: |
           cd milestone
@@ -93,7 +94,7 @@ jobs:
           git commit -m "DAC Build v$NEW_VERSION"
           git push
 
-      # 12. Send SUCCESS Email (Static + Dev)
+      # 12. Send SUCCESS Email
       - name: Send Success Email
         if: success()
         uses: dawidd6/action-send-mail@v3
@@ -105,7 +106,6 @@ jobs:
           subject: "DAC Build SUCCESS - v${{ env.NEW_VERSION }}"
           to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
           from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
-
           html: true
           body: |
             <html>
@@ -135,12 +135,12 @@ jobs:
                   <tr><th>Target Repo</th><td>DAC_Milestone</td></tr>
                   <tr><th>Actions URL</th><td><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Click here</a></td></tr>
                 </table>
-                <p>Cheers,<br>DAC CI System</p>
+                <p>By,<br>DAC CI System</p>
               </div>
             </body>
             </html>
 
-      # 13. Send FAILURE Email (Static + Dev)
+      # 13. Send FAILURE Email
       - name: Send Failure Email
         if: failure()
         uses: dawidd6/action-send-mail@v3
@@ -152,7 +152,6 @@ jobs:
           subject: "DAC Build FAILED"
           to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
           from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
-
           html: true
           body: |
             <html>
@@ -182,7 +181,7 @@ jobs:
                   <tr><th>Target Repo</th><td>DAC_Milestone</td></tr>
                   <tr><th>Actions URL</th><td><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Click here</a></td></tr>
                 </table>
-                <p>Cheers,<br>DAC CI System</p>
+                <p>By,<br>DAC CI System</p>
               </div>
             </body>
             </html>
