@@ -11,32 +11,35 @@ jobs:
 
     steps:
 
-      # 1. Checkout DAC Repo
       - name: Checkout DAC
         uses: actions/checkout@v4
 
-      # 2. Get Author Email
       - name: Get Author Email
         run: |
           DEV_EMAIL=$(git log -1 --pretty=format:'%ae')
           echo "DEV_EMAIL=$DEV_EMAIL" >> $GITHUB_ENV
 
-      # 3. Get Build Time IST
       - name: Get Build Time IST
         run: |
           BUILD_TIME_IST=$(date -d '+5 hour +30 minutes' '+%Y-%m-%d %H:%M:%S IST')
           echo "RUN_TIME_IST=$BUILD_TIME_IST" >> $GITHUB_ENV
 
-      # 4. Clone DAC_Milestone Repo
+      - name: Create DAC Zip
+        run: |
+          zip -r dac_server.zip . -x ".git/*" ".github/*" "README.md" "milestone/*"
+
+      - name: Get Zip Size
+        run: |
+          ZIP_SIZE=$(du -h dac_server.zip | cut -f1)
+          echo "ZIP_SIZE=$ZIP_SIZE" >> $GITHUB_ENV
+
       - name: Clone DAC_Milestone Repo
         run: |
           git clone https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/Braghadeesh005/DAC_Milestone.git milestone
 
-      # 5. Setup Versioning
       - name: Setup Versioning
         run: |
           cd milestone
-          # Check all existing blog.txt files for last version
           if [ -d default ] && [ -f default/blog.txt ]; then
             LAST_VERSION=$(grep "VERSION:" default/blog.txt | tail -1 | awk '{print $2}')
             NEW_VERSION=$(awk "BEGIN {printf \"%.1f\", $LAST_VERSION + 0.1}")
@@ -45,18 +48,6 @@ jobs:
           fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      # 6. Create dac_server.zip (exclude .git, .github, README.md, milestone)
-      - name: Create DAC Zip
-        run: |
-          zip -r dac_server.zip . -x ".git/*" ".github/*" "README.md" "milestone/*"
-
-      # 7. Calculate Zip Size
-      - name: Get Zip Size
-        run: |
-          ZIP_SIZE=$(du -h dac_server.zip | cut -f1)
-          echo "ZIP_SIZE=$ZIP_SIZE" >> $GITHUB_ENV
-
-      # 8. Archive Old default Folder
       - name: Archive Old Default
         run: |
           cd milestone
@@ -66,15 +57,13 @@ jobs:
           fi
           mkdir default
 
-      # 9. Move Zip into default
-      - name: Move Zip
+      - name: Move Zip into milestone
         run: |
-          mv ../dac_server.zip default/
+          cp ../dac_server.zip milestone/default/
 
-      # 10. Create blog.txt Metadata
-      - name: Create blog.txt
+      - name: Create blog.txt Metadata
         run: |
-          cd default
+          cd milestone/default
           echo "VERSION: $NEW_VERSION" >> blog.txt
           echo "BUILD_TIME: $RUN_TIME_IST" >> blog.txt
           echo "COMMIT_ID: $GITHUB_SHA" >> blog.txt
@@ -84,8 +73,7 @@ jobs:
           echo "ZIP_NAME: dac_server.zip" >> blog.txt
           echo "ZIP_SIZE: $ZIP_SIZE" >> blog.txt
 
-      # 11. Commit & Push to DAC_Milestone
-      - name: Commit & Push
+      - name: Commit & Push to DAC_Milestone
         run: |
           cd milestone
           git config user.name "dac-actions"
@@ -94,10 +82,24 @@ jobs:
           git commit -m "DAC Build v$NEW_VERSION"
           git push
 
-      # 12. Send SUCCESS Email
+      - name: Prepare HTML Email (Success)
+        if: success()
+        run: |
+          sed -e "s/{{VERSION}}/${{ env.NEW_VERSION }}/g" \
+              -e "s/{{COMMIT_ID}}/${GITHUB_SHA}/g" \
+              -e "s/{{COMMITTER}}/${GITHUB_ACTOR}/g" \
+              -e "s/{{COMMIT_EMAIL}}/${{ env.DEV_EMAIL }}/g" \
+              -e "s/{{BRANCH}}/main/g" \
+              -e "s/{{ZIP_NAME}}/dac_server.zip/g" \
+              -e "s/{{ZIP_SIZE}}/${{ env.ZIP_SIZE }}/g" \
+              -e "s/{{BUILD_TIME}}/${{ env.RUN_TIME_IST }}/g" \
+              -e "s/{{TARGET_REPO}}/DAC_Milestone/g" \
+              -e "s|{{ACTIONS_URL}}|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" \
+              .github/email_templates/success.html > success_email.html
+
       - name: Send Success Email
         if: success()
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.MAIL_SERVER }}
           server_port: ${{ secrets.MAIL_PORT }}
@@ -106,44 +108,26 @@ jobs:
           subject: "DAC Build SUCCESS - v${{ env.NEW_VERSION }}"
           to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
           from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
-          html: true
-          body: |
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-                .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
-                h2 { color: #4CAF50; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-                th { background-color: #f2f2f2; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h2>DAC Build SUCCESS</h2>
-                <p>Build details for the DAC repository:</p>
-                <table>
-                  <tr><th>Version</th><td>${{ env.NEW_VERSION }}</td></tr>
-                  <tr><th>Commit ID</th><td>${{ github.sha }}</td></tr>
-                  <tr><th>Committer</th><td>${{ github.actor }}</td></tr>
-                  <tr><th>Commit Email</th><td>${{ env.DEV_EMAIL }}</td></tr>
-                  <tr><th>Branch</th><td>main</td></tr>
-                  <tr><th>ZIP Name</th><td>dac_server.zip</td></tr>
-                  <tr><th>ZIP Size</th><td>${{ env.ZIP_SIZE }}</td></tr>
-                  <tr><th>Build Time (IST)</th><td>${{ env.RUN_TIME_IST }}</td></tr>
-                  <tr><th>Target Repo</th><td>DAC_Milestone</td></tr>
-                  <tr><th>Actions URL</th><td><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Click here</a></td></tr>
-                </table>
-                <p>By,<br>DAC CI System</p>
-              </div>
-            </body>
-            </html>
+          html_body: file://success_email.html
 
-      # 13. Send FAILURE Email
+      - name: Prepare HTML Email (Failure)
+        if: failure()
+        run: |
+          sed -e "s/{{VERSION}}/${{ env.NEW_VERSION }}/g" \
+              -e "s/{{COMMIT_ID}}/${GITHUB_SHA}/g" \
+              -e "s/{{COMMITTER}}/${GITHUB_ACTOR}/g" \
+              -e "s/{{COMMIT_EMAIL}}/${{ env.DEV_EMAIL }}/g" \
+              -e "s/{{BRANCH}}/main/g" \
+              -e "s/{{ZIP_NAME}}/dac_server.zip/g" \
+              -e "s/{{ZIP_SIZE}}/${{ env.ZIP_SIZE }}/g" \
+              -e "s/{{BUILD_TIME}}/${{ env.RUN_TIME_IST }}/g" \
+              -e "s/{{TARGET_REPO}}/DAC_Milestone/g" \
+              -e "s|{{ACTIONS_URL}}|https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|g" \
+              .github/email_templates/failure.html > failure_email.html
+
       - name: Send Failure Email
         if: failure()
-        uses: dawidd6/action-send-mail@v3
+        uses: dawidd6/action-send-mail@v6
         with:
           server_address: ${{ secrets.MAIL_SERVER }}
           server_port: ${{ secrets.MAIL_PORT }}
@@ -152,36 +136,4 @@ jobs:
           subject: "DAC Build FAILED"
           to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
           from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
-          html: true
-          body: |
-            <html>
-            <head>
-              <style>
-                body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
-                .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
-                h2 { color: #f44336; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
-                th { background-color: #f2f2f2; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <h2>DAC Build FAILED</h2>
-                <p>Build details for the DAC repository:</p>
-                <table>
-                  <tr><th>Version</th><td>${{ env.NEW_VERSION }}</td></tr>
-                  <tr><th>Commit ID</th><td>${{ github.sha }}</td></tr>
-                  <tr><th>Committer</th><td>${{ github.actor }}</td></tr>
-                  <tr><th>Commit Email</th><td>${{ env.DEV_EMAIL }}</td></tr>
-                  <tr><th>Branch</th><td>main</td></tr>
-                  <tr><th>ZIP Name</th><td>dac_server.zip</td></tr>
-                  <tr><th>ZIP Size</th><td>${{ env.ZIP_SIZE }}</td></tr>
-                  <tr><th>Build Time (IST)</th><td>${{ env.RUN_TIME_IST }}</td></tr>
-                  <tr><th>Target Repo</th><td>DAC_Milestone</td></tr>
-                  <tr><th>Actions URL</th><td><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Click here</a></td></tr>
-                </table>
-                <p>By,<br>DAC CI System</p>
-              </div>
-            </body>
-            </html>
+          html_body: file://failure_email.html

@@ -1,0 +1,31 @@
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+    .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+    h2 { color: #f44336; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #ddd; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>DAC Build FAILED</h2>
+    <p>Build details for the DAC repository:</p>
+    <table>
+      <tr><th>Version</th><td>{{VERSION}}</td></tr>
+      <tr><th>Commit ID</th><td>{{COMMIT_ID}}</td></tr>
+      <tr><th>Committer</th><td>{{COMMITTER}}</td></tr>
+      <tr><th>Commit Email</th><td>{{COMMIT_EMAIL}}</td></tr>
+      <tr><th>Branch</th><td>{{BRANCH}}</td></tr>
+      <tr><th>ZIP Name</th><td>{{ZIP_NAME}}</td></tr>
+      <tr><th>ZIP Size</th><td>{{ZIP_SIZE}}</td></tr>
+      <tr><th>Build Time (IST)</th><td>{{BUILD_TIME}}</td></tr>
+      <tr><th>Target Repo</th><td>{{TARGET_REPO}}</td></tr>
+      <tr><th>Actions URL</th><td><a href="{{ACTIONS_URL}}">Click here</a></td></tr>
+    </table>
+    <p>By,<br>DAC CI System</p>
+  </div>
+</body>
+</html>
