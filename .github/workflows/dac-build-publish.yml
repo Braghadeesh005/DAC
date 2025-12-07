@@ -1,0 +1,150 @@
+name: DAC Build & Milestone Publisher
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Checkout DAC Repo
+      - name: Checkout DAC
+        uses: actions/checkout@v4
+
+      # 2. Get Commit Author Email (Dev Email)
+      - name: Get Commit Author Email
+        run: |
+          DEV_EMAIL=$(git log -1 --pretty=format:'%ae')
+          echo "DEV_EMAIL=$DEV_EMAIL" >> $GITHUB_ENV
+
+      # 3. Create dac_server.zip
+      - name: Create DAC Zip
+        run: |
+          zip -r dac_server.zip . -x ".git/*"
+
+      # 4. Calculate Zip Size
+      - name: Get Zip Size
+        run: |
+          ZIP_SIZE=$(du -h dac_server.zip | cut -f1)
+          echo "ZIP_SIZE=$ZIP_SIZE" >> $GITHUB_ENV
+
+      # 5. Clone DAC_Milestone Repo
+      - name: Clone DAC_Milestone Repo
+        run: |
+          git clone https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/Braghadeesh005/DAC_Milestone.git milestone
+
+      # 6. Setup Versioning
+      - name: Setup Versioning
+        run: |
+          cd milestone
+
+          if [ -f default/blog.txt ]; then
+            LAST_VERSION=$(grep "VERSION:" default/blog.txt | tail -1 | awk '{print $2}')
+            NEW_VERSION=$(awk "BEGIN {printf \"%.1f\", $LAST_VERSION + 0.1}")
+          else
+            NEW_VERSION="1.0"
+          fi
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      # 7. Archive Old default Folder
+      - name: Archive Old Default
+        run: |
+          cd milestone
+
+          if [ -d default ]; then
+            BUILD_TIME=$(date "+%Y-%m-%d_%H-%M-%S")
+            mv default dac_$BUILD_TIME
+          fi
+
+          mkdir default
+
+      # 8. Move Zip into default
+      - name: Move Zip
+        run: |
+          mv dac_server.zip milestone/default/
+
+      # 9. Create blog.txt Metadata
+      - name: Create blog.txt
+        run: |
+          cd milestone/default
+
+          echo "VERSION: $NEW_VERSION" >> blog.txt
+          echo "BUILD_TIME: $(date)" >> blog.txt
+          echo "COMMIT_ID: $GITHUB_SHA" >> blog.txt
+          echo "COMMITTER: $GITHUB_ACTOR" >> blog.txt
+          echo "COMMIT_EMAIL: $DEV_EMAIL" >> blog.txt
+          echo "BRANCH: $GITHUB_REF_NAME" >> blog.txt
+          echo "ZIP_NAME: dac_server.zip" >> blog.txt
+          echo "ZIP_SIZE: $ZIP_SIZE" >> blog.txt
+
+      # 10. Push to DAC_Milestone Repo
+      - name: Commit & Push
+        run: |
+          cd milestone
+          git config user.name "dac-actions"
+          git config user.email "dac@github.com"
+
+          git add .
+          git commit -m "DAC Build v$NEW_VERSION"
+          git push
+
+      # 11. Send SUCCESS Email (Static + Dev)
+      - name: Send Success Email
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+
+          subject: "DAC Build SUCCESS - v${{ env.NEW_VERSION }}"
+
+          body: |
+            Build Status : SUCCESS
+
+            Version: ${{ env.NEW_VERSION }}
+            Commit ID: ${{ github.sha }}
+            Committer: ${{ github.actor }}
+            Commit Email: ${{ env.DEV_EMAIL }}
+            Branch: main
+            ZIP Size: ${{ env.ZIP_SIZE }}
+            Time: ${{ github.run_started_at }}
+
+            Repo: DAC
+            Target Repo: DAC_Milestone
+
+          to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
+          from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
+
+      # 12. Send FAILURE Email (Static + Dev)
+      - name: Send Failure Email
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+
+          subject: "DAC Build FAILED"
+
+          body: |
+            Build Status : Failed
+
+            Repo: DAC
+            Branch: main
+            Commit: ${{ github.sha }}
+            Committer: ${{ github.actor }}
+            Commit Email: ${{ env.DEV_EMAIL }}
+
+            Check logs:
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          to: ${{ secrets.MAIL_TO_STATIC }},${{ env.DEV_EMAIL }}
+          from: "DAC CI <${{ secrets.MAIL_USERNAME }}>"
