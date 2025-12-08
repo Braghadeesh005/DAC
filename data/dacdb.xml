@@ -24,25 +24,25 @@
             CREATE TABLE DacConfiguration ( PROPNAME VARCHAR(100) PRIMARY KEY, PROPVAL VARCHAR(255));
         </sql>
         <inserts>
-            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`authentication-key`, `mKvoMWhF0motX7YlO9ZSAU9y`);</insert>
-            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`db-password-key`, `4tvbwdLAVhHCRGw33s17427CfTn`);</insert>
-            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`user-password-key`, `FT38Hq1mT4LYJBGL9pjWdIgXuIO`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`authentication-key`, `9CrMPG.9tdBaIp9nFdlJcDnYYQQqKjcceI`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`db-password-key`, `JQyIVH.C9kJ5nqVng2yL7pM6wTUokRxkPP`);</insert>
+            <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`user-password-key`, `WQIUkO.92veaZjO3fPmI3MYN0pytB7G1j5`);</insert>
             <insert> INSERT INTO DacConfiguration (PROPNAME, PROPVAL) VALUES (`user-session-count-limit`, `5`);</insert>
         </inserts>
     </table>
 
     <table name="DacUser">
         <sql>
-            CREATE TABLE DacUser ( USER_ID INT PRIMARY KEY AUTO_INCREMENT, USER_NAME VARCHAR(100), PASSWORD VARCHAR(255));
+            CREATE TABLE DacUser ( USER_ID INT PRIMARY KEY AUTO_INCREMENT, USER_NAME VARCHAR(100) UNIQUE, PASSWORD VARCHAR(255));
         </sql>
         <inserts>
-            <insert> INSERT INTO DacUser (USER_NAME,PASSWORD) VALUES(`admin`,`L5ebHT5vVswhClQgXV0KUw`); </insert> <!--default user admin-->
+            <insert> INSERT INTO DacUser (USER_NAME,PASSWORD) VALUES(`admin`,`TefFu70QeQN2AVAnVl5WUw`); </insert> <!--default user admin-->
         </inserts>
     </table>
 
     <table name="UserSessionInfo">
         <sql>
-            CREATE TABLE UserSessionInfo ( SESSION_ID INT PRIMARY KEY AUTO_INCREMENT, USER_ID INT, DIGEST VARCHAR(255), LOGIN_TIME BIGINT, LAST_ACCESS_TIME BIGINT, MACHINE_IP VARCHAR(50), OS VARCHAR(100), BROWSER VARCHAR(100), DEVICE_TYPE VARCHAR(50), FOREIGN KEY (USER_ID) REFERENCES DacUser(USER_ID));
+            CREATE TABLE UserSessionInfo ( SESSION_ID INT PRIMARY KEY AUTO_INCREMENT, USER_ID INT, DIGEST VARCHAR(255) UNIQUE, LOGIN_TIME BIGINT, LAST_ACCESS_TIME BIGINT, MACHINE_IP VARCHAR(50), OS VARCHAR(100), BROWSER VARCHAR(100), DEVICE_TYPE VARCHAR(50), FOREIGN KEY (USER_ID) REFERENCES DacUser(USER_ID));
         </sql>
     </table>
 
