@@ -58,7 +58,7 @@ setAPIUrl() {
 }
 
 setProtocol() {
-    local IS_HTTPS=$(grep -E '^IS_HTTPS=' "$ENV_FILE" | cut -d '=' -f2)
+    local IS_HTTPS=$(grep -E '^PRODUCTION=' "$ENV_FILE" | cut -d '=' -f2)
     if [[ "$IS_HTTPS" == "true" ]]; then
         PROTOCOL="https"
     fi

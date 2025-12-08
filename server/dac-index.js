@@ -26,10 +26,9 @@ const app = express();
 const PORT = process.env.SERVER_PORT;
 
 /*  
-    CORS Configuration :
-      1. Currently CORS is set for HTTPS Cross-Origin requests only.
-      2. For Dev Same-Origin requests, Set MACHINE_IP as localhost in config-properties.env.
-      3. For Dev Cross-Origin requests, update browser's properties for testing. 
+    CORS Configuration in Config File :
+      1. For Remote Requests Handling in Dev Environment : Update Browser Configuration to Allow Insecure Remote Requests.
+      2. For Production Environment (When HTTPS Enabled) : Set PRODUCTION = true.
 */
 
 app.use(

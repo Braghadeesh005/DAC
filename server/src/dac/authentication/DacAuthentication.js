@@ -57,7 +57,7 @@ class DacAuthentication {
             const encryptedDigestForAuth = AuraCrypt.encrypt(digest, authKey);
             res.cookie('dac-token', encryptedDigestForAuth, {
                 httpOnly: true,
-                secure: true,
+                secure: process.env.PRODUCTION == 'true',
                 sameSite: 'None'
             });
             const currentTimeEpoch = Math.floor(Date.now() / 1000);
