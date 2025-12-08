@@ -37,7 +37,7 @@ class DacAuthentication {
 
     static async validateLoginCredentials(inputPassword, encryptedPasswordFromDB) {
         try {
-            return await DacAuthentication.decryptUserPassword(encryptedPasswordFromDB) === inputPassword;
+            return await this.decryptUserPassword(encryptedPasswordFromDB) === inputPassword;
         } 
         catch (err) {
             throw new Error(`validateLoginCredentials() failed: ${err.message}`);
@@ -51,6 +51,7 @@ class DacAuthentication {
 
     static async createSession(userId, ip, os, browser, deviceType, res) {
         try {
+            await this.checkAndRemoveStaleSessions(userId, ip, os, browser);
             const digest = DigestBuilder.createDigest();
             const authKey = StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY));
             const encryptedDigestForAuth = AuraCrypt.encrypt(digest, authKey);
@@ -65,6 +66,22 @@ class DacAuthentication {
         } 
         catch (err) {
             throw new Error(`createSession() failed: ${err.message}`);
+        }
+    }
+
+    static async checkAndRemoveStaleSessions(userId, ip, os, browser) {
+        try {
+            const rows = await DBUtil.getResults(`${DacQueries.QUERY_GET_ALL_SESSIONS} WHERE (USER_ID='${userId}' AND MACHINE_IP='${ip}' AND OS='${os}' AND BROWSER='${browser}')`);
+            const staleSessionIdList = rows.map(r => r.SESSION_ID);
+            if (staleSessionIdList.length === 0) {
+                LOGGER.log(Level.INFO, 'No stale sessions found.');
+                return;
+            }
+            await DBUtil.executeUpdate(DacQueries.QUERY_DELETE_EXPIRED_SESSIONS, [staleSessionIdList]);
+            LOGGER.log(Level.INFO, `Deleted ${staleSessionIdList.length} stale sessions.`);
+        } 
+        catch (err) {
+            throw new Error(`checkAndRemoveStaleSessions() failed: ${err.message}`);
         }
     }
 
