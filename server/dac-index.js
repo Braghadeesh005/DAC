@@ -27,7 +27,7 @@ const PORT = process.env.SERVER_PORT;
 
 /*  
     CORS Configuration in Config File :
-      1. For Remote Requests Handling in Dev Environment : Update Browser Configuration to Allow Insecure Remote Requests.
+      1. For Remote Requests Handling in Dev Environment : Set CROSS_SITE_DEV_TESTING = true and Update Browser Configuration to Allow Insecure Remote Requests.
       2. For Production Environment (When HTTPS Enabled) : Set PRODUCTION = true.
 */
 

@@ -39,7 +39,8 @@ Follow these steps for a complete installation and initial run:
     | `DB_PORT` | Port on which the MySQL Server will run |
     | `DB_NAME` | Name of the DAC database |
     | `SERVER_PORT` | The port on which the DAC Server will run |
-    | `PRODUCTION` | Controls activation of HTTPS support (Optional) |
+    | `PRODUCTION` | Boolean which controls activation of HTTPS support (Optional) |
+    | `CROSS_SITE_DEV_TESTING` | Boolean that toggles cross-site HTTP request acceptance (Optional) |
 4.  **Build the Client:**
     Run the build script to compile the client source code:
     ```bash
