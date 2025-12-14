@@ -1,12 +1,19 @@
 #!/bin/bash
 PROJECT_HOME="$HOME/dac"
 SERVER_HOME="$PROJECT_HOME/server"
+CLIENT_HOME="$SERVER_HOME/client/dac"
 SERVER_SCRIPT="dac-index.js"
 SERVER_SCRIPT_FULL_PATH="$SERVER_HOME/$SERVER_SCRIPT"
 LOG_DIR="$PROJECT_HOME/logs"
 LOG_FILE="$LOG_DIR/startup.log"
 DATA_FILE="$PROJECT_HOME/data/dacdb.xml"
 ENV_FILE="$SERVER_HOME/config-properties.env"
+PROTOCOL="http"
+
+createLogDirectory() {
+    mkdir -p "$LOG_DIR"
+    log "Log dir is created"
+}
 
 log() {
     echo -e "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -18,54 +25,40 @@ consoleLog() {
 }
 
 error_exit() {
-    consoleLog "$1"
+    consoleLog "ERROR: $1"
     exit 1
 }
 
 populate_env_vars() {
-    if [ ! -f "$ENV_FILE" ]; then
-        error_exit "ERROR: Environment file $ENV_FILE not found."
-    fi
+    [[ ! -f "$ENV_FILE" ]] && error_exit "Env file not found: $ENV_FILE"
     DB_NAME=$(grep -E '^DB_NAME=' "$ENV_FILE" | cut -d '=' -f2)
     DB_USER=$(grep -E '^DB_USER=' "$ENV_FILE" | cut -d '=' -f2)
+    DB_PASS=$(grep -E '^DB_PASS=' "$ENV_FILE" | cut -d '=' -f2)
     SERVER_PORT=$(grep -E '^SERVER_PORT=' "$ENV_FILE" | cut -d '=' -f2)
-    if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$SERVER_PORT" ]; then
-        error_exit "ERROR: Missing required environment variables in $ENV_FILE."
-    fi
-    log "Environment variables populated: DB_NAME=$DB_NAME, DB_USER=$DB_USER, SERVER_PORT=$SERVER_PORT"
+    MACHINE_IP=$(grep -E '^MACHINE_IP=' "$ENV_FILE" | cut -d '=' -f2)
+    PRODUCTION=$(grep -E '^PRODUCTION=' "$ENV_FILE" | cut -d '=' -f2)
+    [[ -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASS" || -z "$SERVER_PORT" ]] && error_exit "Missing mandatory env values"
+    [[ "$PRODUCTION" == "true" ]] && PROTOCOL="https"
+    export MYSQL_PWD="$DB_PASS"
+    log "Env loaded successfully"
 }
 
 check_existing_process() {
     ABSOLUTE_SCRIPT_PATH="$(realpath "$SERVER_SCRIPT_FULL_PATH")"
     PID=$(ps aux | grep "node" | grep "$ABSOLUTE_SCRIPT_PATH" | grep -v grep | awk '{print $2}')
-    if [ -n "$PID" ]; then
-        error_exit "ERROR: $ABSOLUTE_SCRIPT_PATH is already running with PID $PID"
+    [[ -n "$PID" ]] && error_exit "Server already running (PID: $PID)"
+    if netstat -tuln | grep -q ":$SERVER_PORT "; then
+        error_exit "Port $SERVER_PORT already in use"
     fi
-    if netstat -tuln | grep -q ":$SERVER_PORT[[:space:]]"; then
-        error_exit "ERROR: Port $SERVER_PORT is already in use"
-    fi
-    log "No existing process or port usage detected"
 }
 
-check_npm_installed() {
-    if ! command -v npm > /dev/null 2>&1; then
-        error_exit "ERROR: npm is not installed. Please install Node.js and npm."
-    fi
-    log "npm is installed"
-}
-
-cold_start() {
-    local MYSQL_PASSWORD="$1"
-    log "Performing Cold Start"
-    export MYSQL_PWD="$MYSQL_PASSWORD"
-    create_db
-    populate_tables
-    install_packages
+check_npm() {
+    command -v npm >/dev/null 2>&1 || error_exit "npm not installed"
 }
 
 create_db() {
-    log "Checking and creating DB '$DB_NAME' if missing"
-    mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;" || error_exit "ERROR: Failed to create database."
+    log "Ensuring DB exists: $DB_NAME"
+    mysql -u"$DB_USER" -e "CREATE DATABASE IF NOT EXISTS $DB_NAME;" || error_exit "DB creation failed"
 }
 
 populate_tables() {
@@ -85,7 +78,7 @@ create_table() {
     SQL=$(echo "$SQL" | sed -E 's/CREATE[ ]+TABLE[ ]+([^(]+)/CREATE TABLE IF NOT EXISTS \1/i')
     log "Create Table Query for $TABLE Table : $SQL"
     mysql -u"$DB_USER" -D "$DB_NAME" <<< "$SQL"
- }
+}
 
 insert_table() {
     local TABLE="$1"
@@ -110,37 +103,69 @@ insert_table() {
     mysql -u"$DB_USER" -D "$DB_NAME" <<< "$BATCH_SQL"
 }
 
-install_packages() {
-    log "Running npm install in $SERVER_HOME"
-    npm install >> "$LOG_FILE" 2>&1
+client_build() {
+    cd "$CLIENT_HOME" || error_exit "Client dir missing"
+    export VITE_API_URL="${PROTOCOL}://$MACHINE_IP:$SERVER_PORT"
+    log "VITE_API_URL=$VITE_API_URL"
+    npm install || error_exit "npm install failed (client)"
+    npm run build || error_exit "client build failed"
+    [[ -d dist ]] || error_exit "dist directory not generated"
+    rm -rf build
+    mv dist build
+    consoleLog "Client built Successfully"
+}
+
+install_server_packages() {
+    cd "$SERVER_HOME" || error_exit "Server dir missing"
+    npm install || error_exit "npm install failed (server)"
 }
 
 start_server() {
-    log "Starting server"
+    cd "$SERVER_HOME" || error_exit "Server dir missing"
     npm start >> "$LOG_FILE" 2>&1 &
     sleep 2
     PID=$(pgrep -f "$SERVER_SCRIPT" | head -n 1)
-    if [ -n "$PID" ]; then
-        consoleLog "Server started successfully with PID $PID"
-    else
-        error_exit "ERROR: Failed to start server."
-    fi
+    [[ -z "$PID" ]] && error_exit "Server failed to start"
+    consoleLog "Server started successfully (PID: $PID)"
+}
+
+cold_start() {
+    consoleLog "Cold start initiated"
+    client_build
+    create_db
+    populate_tables
+    install_server_packages
+    start_server
+}
+
+warm_start() {
+    consoleLog "Warm start initiated"
+    [[ ! -d "$SERVER_HOME/node_modules" ]] && error_exit "node_modules missing, run cold start"
+    start_server
+}
+
+bundle_only() {
+    consoleLog "Client bundling initiated"
+    client_build
 }
 
 main() {
-    consoleLog "Check startup.log for detailed logs"
+    ACTION="$1"
+    FLAG="$2"
+    createLogDirectory
     populate_env_vars
-    check_existing_process
-    check_npm_installed
-    cd "$SERVER_HOME" || {
-        error_exit "ERROR: Failed to change to server directory: $SERVER_HOME"
-    }
-    if [ -n "$1" ]; then
-        cold_start "$1"
-    elif [ ! -d "node_modules" ]; then
-        error_exit "ERROR: node_modules is missing. Run cold start."
+    check_npm
+    if [[ "$ACTION" == "start" ]]; then
+        check_existing_process
+        [[ "$FLAG" == "true" ]] && cold_start || warm_start
+    elif [[ "$ACTION" == "bundle" ]]; then
+        bundle_only
+    else
+        echo "Usage:"
+        echo "  ./run.sh start [true|false]"
+        echo "  ./run.sh bundle"
+        exit 1
     fi
-    start_server
 }
 
 main "$@"
