@@ -26,7 +26,7 @@ jobs:
 
       - name: Create DAC Zip
         run: |
-          zip -r dac_server.zip . -x ".git/*" ".github/*" "README.md" "milestone/*"
+          zip -r dac_server.zip . -x ".git/*" "README.md" "milestone/*"
 
       - name: Get Zip Size
         run: |
@@ -40,30 +40,30 @@ jobs:
       - name: Setup Versioning
         run: |
           cd milestone
-          if [ -d default ] && [ -f default/blog.txt ]; then
-            LAST_VERSION=$(grep "VERSION:" default/blog.txt | tail -1 | awk '{print $2}')
+          if [ -d latest ] && [ -f latest/blog.txt ]; then
+            LAST_VERSION=$(grep "VERSION:" latest/blog.txt | tail -1 | awk '{print $2}')
             NEW_VERSION=$(awk "BEGIN {printf \"%.1f\", $LAST_VERSION + 0.1}")
           else
             NEW_VERSION="1.0"
           fi
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Archive Old Default
+      - name: Archive Old latest
         run: |
           cd milestone
-          if [ -d default ]; then
+          if [ -d latest ]; then
             BUILD_TIME=$(date "+%Y-%m-%d_%H-%M-%S")
-            mv default dac_$BUILD_TIME
+            mv latest dac_$BUILD_TIME
           fi
-          mkdir default
+          mkdir latest
 
       - name: Move Zip into milestone
         run: |
-          cp dac_server.zip milestone/default/
+          cp dac_server.zip milestone/latest/
 
       - name: Create blog.txt Metadata
         run: |
-          cd milestone/default
+          cd milestone/latest
           echo "VERSION: $NEW_VERSION" >> blog.txt
           echo "BUILD_TIME: $RUN_TIME_IST" >> blog.txt
           echo "COMMIT_ID: $GITHUB_SHA" >> blog.txt
