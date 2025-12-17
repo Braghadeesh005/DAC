@@ -10,7 +10,7 @@ const LOGGER = new DacLogger("SessionMiddleware.js");
 
 class SessionMiddleware {
 
-    static skipRoutes = ['api/auth/login', 'api/auth/session'];
+    static skipRoutes = ['api/auth/login', 'api/auth/session','api/auth/logout'];
     
     static skipUpdate(realPath) {
         const path = realPath.replace(/^\/+|\/+$/g, "");

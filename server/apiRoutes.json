@@ -1,0 +1,5 @@
+{
+    "BACKEND_LOGIN_API": "/api/auth/login",
+    "BACKEND_SESSION_API": "/api/auth/session",
+    "BACKEND_LOGOUT_API": "/api/auth/logout"
+}

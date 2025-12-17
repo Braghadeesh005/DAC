@@ -9,29 +9,25 @@ const sidebarGroups = {
   apps: [
     { name: 'App Dashboard', to: '/apps/home' },
     { name: 'Manage Groups', to: '/apps/group' },
-    { name: 'Logout', to: '/' },
   ],
   inv: [
     { name: 'Inventory Overview', to: '/inv/home' },
     { name: 'Cage Info', to: '/inv/cage' },
-    { name: 'Logout', to: '/' },
   ],
   fw: [
     { name: 'FireWall Overview', to: '/fw/home' },
     { name: 'Firmware Versions', to: '/fw/versions' },
     { name: 'Update Firmware', to: '/fw/update' },
-    { name: 'Logout', to: '/' },
   ],
   lb: [
     { name: 'LB Overview', to: '/lb/home' },
     { name: 'Load Balancer Stats', to: '/lb/stats' },
     { name: 'Cage Info', to: '/lb/cage' },
-    { name: 'Logout', to: '/' },
   ],
   profile: [
     { name: 'Profile', to: '/profile/home' },
     { name: 'Edit Color Theme', to: '/profile/Editheme' },
-    { name: 'Logout', to: '/' },
+    { name: 'Logout', to: '/profile/logout' },
   ],
 };
 

@@ -46,13 +46,27 @@ router.post('/login', async (req, res) => {
 
 router.post('/session', async (req, res) => {
   try{
-    const isValid = await DacAuthentication.checkSessionExists(req);
+    const token = req.cookies?.['dac-token'];
+    const isValid = await DacAuthentication.checkSessionExists(token);
     LOGGER.log(Level.INFO, isValid ? `Session Exists` : `Session Doesn't Exists`, User.CLIENT);
     return res.status(200).json({isValid});
   }
   catch (err){
     LOGGER.log(Level.ERROR, `Session Validation Failed due to error:${err.message}`, User.CLIENT, err);
     return res.status(500).json({ error: `Session Validation failed due to Internal Server Error`});
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  try{
+    const token = req.cookies?.['dac-token'];
+    await DacAuthentication.terminateSession(token);
+    LOGGER.log(Level.INFO, `Session Terminated Successfully`, User.CLIENT);
+    return res.status(200).json({ message: `Logout Successful`});    
+  }
+  catch (err){
+    LOGGER.log(Level.ERROR, `Logout Failed due to error:${err.message}`, User.CLIENT, err);
+    return res.status(500).json({ error: `Logout failed due to Internal Server Error`});
   }
 });
 

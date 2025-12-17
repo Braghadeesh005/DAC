@@ -6,6 +6,8 @@
     },
 
     "/api/auth/session": {},
+    
+    "/api/auth/logout": {},
 
     "/api/fw/check": {},
 

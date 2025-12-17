@@ -71,28 +71,47 @@ class DacAuthentication {
 
     static async checkAndRemoveStaleSessions(userId, ip, os, browser) {
         try {
-            const rows = await DBUtil.getResults(`${DacQueries.QUERY_GET_ALL_SESSIONS} WHERE (USER_ID='${userId}' AND MACHINE_IP='${ip}' AND OS='${os}' AND BROWSER='${browser}')`);
-            const staleSessionIdList = rows.map(r => r.SESSION_ID);
-            if (staleSessionIdList.length === 0) {
-                LOGGER.log(Level.INFO, 'No stale sessions found.');
-                return;
-            }
-            await DBUtil.executeUpdate(DacQueries.QUERY_DELETE_EXPIRED_SESSIONS, [staleSessionIdList]);
-            LOGGER.log(Level.INFO, `Deleted ${staleSessionIdList.length} stale sessions.`);
+            await DBUtil.executeUpdate(DacQueries.QUERY_REMOVE_STALE_SESSIONS, [userId, ip, os, browser]);
+            LOGGER.log(Level.INFO, `Deleted stale sessions.`);
         } 
         catch (err) {
             throw new Error(`checkAndRemoveStaleSessions() failed: ${err.message}`);
         }
     }
 
-    static async checkSessionExists(req) {
+    static async decryptToken(token) {
+        let digest;
         try {
-            const token = req.cookies?.['dac-token'];
+            digest = AuraCrypt.decrypt(token, StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY)));
+        } catch (err) {
+            LOGGER.log(Level.WARNING, `Failed to decrypt dac-token during terminateSession: ${err.message}`);
+            return;
+        }
+        return digest;
+    }
+
+    static async terminateSession(token) {
+        try {
+            if (!token) {
+                LOGGER.log(Level.WARNING, 'Missing dac-token in cookies for terminateSession');
+                return;
+            }
+            let digest=await this.decryptToken(token);
+            await DBUtil.executeUpdate(DacQueries.QUERY_DELETE_SESSIONS_BY_DIGEST, [digest]);
+            LOGGER.log(Level.INFO, `Terminated sessions for digest.`);
+        } 
+        catch (err) {
+            throw new Error(`terminateSession() failed: ${err.message}`);
+        }
+    }
+
+    static async checkSessionExists(token) {
+        try {
             if (!token) {
                 LOGGER.log(Level.WARNING, 'Missing dac-token in cookies');
                 return false;
             }
-            const digest = AuraCrypt.decrypt(token, StreamObfuscator.decrypt(await DacConfiguration.get(DacConfiguration.PROP_AUTH_KEY)));
+            let digest=await this.decryptToken(token);
             return await DBUtil.hasResults(DacQueries.QUERY_CHECK_DIGEST, [digest]);
         } 
         catch (err) {
